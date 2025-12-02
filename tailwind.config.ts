@@ -57,6 +57,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "nav-active": "hsl(var(--nav-active))",
+        "nav-hover": "hsl(var(--nav-hover))",
+        "progress-bg": "hsl(var(--progress-bg))",
+      },
+      backgroundImage: {
+        "gradient-hero": "var(--gradient-hero)",
+      },
+      transitionTimingFunction: {
+        smooth: "var(--transition-smooth)",
       },
       borderRadius: {
         lg: "var(--radius)",

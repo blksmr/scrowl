@@ -11,7 +11,7 @@ type ScrollSpyOptions = {
 
 export function useScrollSpy(
   sectionIds: string[],
-  { rootMargin = "0px 0px -50% 0px", threshold = [0, 0.25, 0.5, 0.75, 1], scrollLockMs = 800 }: ScrollSpyOptions = {}
+  { rootMargin = "0px 0px -50% 0px", threshold = [0, 0.25, 0.5, 0.75, 1], scrollLockMs = 600 }: ScrollSpyOptions = {}
 ) {
   const [activeId, setActiveId] = useState<string | null>(sectionIds[0] || null);
   const refs = useRef<Record<string, HTMLElement | null>>({});
@@ -26,6 +26,35 @@ export function useScrollSpy(
       delete refs.current[id];
     }
   }, []);
+
+  // Helper to find the most visible section
+  const findMostVisibleSection = useCallback(() => {
+    const viewportHeight = window.innerHeight;
+    const viewportCenter = viewportHeight / 2;
+    
+    let bestId: string | null = null;
+    let bestDistance = Infinity;
+    
+    sectionIds.forEach((id) => {
+      const el = refs.current[id];
+      if (!el) return;
+      
+      const rect = el.getBoundingClientRect();
+      // Check if element is in viewport
+      if (rect.bottom > 0 && rect.top < viewportHeight) {
+        // Calculate distance from element center to viewport center
+        const elementCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(elementCenter - viewportCenter);
+        
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestId = id;
+        }
+      }
+    });
+    
+    return bestId;
+  }, [sectionIds]);
 
   // Function to scroll to a section with lock (for click navigation)
   const scrollToSection = useCallback((id: string) => {
@@ -91,6 +120,21 @@ export function useScrollSpy(
       }
     };
   }, [sectionIds, rootMargin, threshold]);
+
+  // Fallback: listen to scroll events and update when not locked
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isLockedRef.current) return;
+      
+      const visibleId = findMostVisibleSection();
+      if (visibleId && visibleId !== activeId) {
+        setActiveId(visibleId);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [findMostVisibleSection, activeId]);
 
   return { activeId, registerRef, scrollToSection };
 }

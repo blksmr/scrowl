@@ -1,30 +1,27 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ScrollSpyOptions = {
   // Offset to adjust the "active zone" (e.g., center of viewport)
   rootMargin?: string;
   // More thresholds = finer detection
   threshold?: number | number[];
-  // Debounce delay in ms to prevent rapid state changes during fast scrolling
-  debounceMs?: number;
 };
 
 export function useScrollSpy(
   sectionIds: string[],
-  { rootMargin = "0px 0px -50% 0px", threshold = [0, 0.25, 0.5, 0.75, 1], debounceMs = 100 }: ScrollSpyOptions = {}
+  { rootMargin = "0px 0px -50% 0px", threshold = [0, 0.25, 0.5, 0.75, 1] }: ScrollSpyOptions = {}
 ) {
   const [activeId, setActiveId] = useState<string | null>(sectionIds[0] || null);
   const refs = useRef<Record<string, HTMLElement | null>>({});
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Callback to attach refs to sections
-  const registerRef = useCallback((id: string) => (el: HTMLElement | null) => {
+  const registerRef = (id: string) => (el: HTMLElement | null) => {
     if (el) {
       refs.current[id] = el;
     } else {
       delete refs.current[id];
     }
-  }, []);
+  };
 
   useEffect(() => {
     const elements = sectionIds
@@ -33,7 +30,7 @@ export function useScrollSpy(
 
     if (!elements.length) return;
 
-    let pendingActiveId: string | null = null;
+    let currentActiveId: string | null = null;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -47,19 +44,9 @@ export function useScrollSpy(
         const best = visibleEntries[0];
         const newActiveId = best.target.getAttribute("data-scrollspy-id");
 
-        if (newActiveId && newActiveId !== pendingActiveId) {
-          pendingActiveId = newActiveId;
-          
-          // Clear existing debounce timer
-          if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-          }
-          
-          // Debounce the state update to prevent rapid changes during fast scrolling
-          // Only update if the new ID is different from the current state
-          debounceTimerRef.current = setTimeout(() => {
-            setActiveId((currentId) => currentId !== newActiveId ? newActiveId : currentId);
-          }, debounceMs);
+        if (newActiveId && newActiveId !== currentActiveId) {
+          currentActiveId = newActiveId;
+          setActiveId(newActiveId);
         }
       },
       {
@@ -73,11 +60,8 @@ export function useScrollSpy(
 
     return () => {
       observer.disconnect();
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
     };
-  }, [sectionIds, rootMargin, threshold, debounceMs]);
+  }, [sectionIds, rootMargin, threshold]);
 
   return { activeId, registerRef };
 }

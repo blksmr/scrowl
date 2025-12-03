@@ -47,7 +47,11 @@ const Index = () => {
             {/* Sticky Navigation */}
             <aside className="hidden lg:block w-64 shrink-0">
               <div className="sticky top-24">
-                <Card className="p-2 bg-card border-border">
+                <Card className="relative p-2 bg-card border-border ring-2 ring-debug-menu ring-offset-2 ring-offset-background">
+                  {/* Debug Label: MENU */}
+                  <div className="absolute -top-3 -right-3 z-50 px-2 py-0.5 bg-debug-menu text-white text-[10px] font-bold uppercase tracking-wider rounded shadow-lg">
+                    Menu
+                  </div>
                   <nav>
                     <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Table des matières
@@ -69,11 +73,16 @@ const Index = () => {
             </aside>
 
             {/* Content */}
-            <main className="flex-1 max-w-4xl">
+            <main className="relative flex-1 max-w-4xl">
+              {/* Debug Label: CONTENT */}
+              <div className="absolute -top-3 right-0 z-50 px-2 py-0.5 bg-debug-content text-white text-[10px] font-bold uppercase tracking-wider rounded shadow-lg">
+                Content
+              </div>
               <ContentSection
                 id="introduction"
                 title="Introduction"
                 registerRef={registerRef}
+                isActive={activeId === "introduction"}
               >
                 <p className="text-lg leading-relaxed mb-4">
                   Le <strong>scroll spy</strong> est une technique permettant de suivre automatiquement
@@ -96,6 +105,7 @@ const Index = () => {
                 id="observer"
                 title="IntersectionObserver"
                 registerRef={registerRef}
+                isActive={activeId === "observer"}
               >
                 <p className="leading-relaxed mb-4">
                   <code className="px-2 py-1 bg-muted rounded text-sm">IntersectionObserver</code> est
@@ -130,6 +140,7 @@ const Index = () => {
                 id="implementation"
                 title="Implémentation"
                 registerRef={registerRef}
+                isActive={activeId === "implementation"}
               >
                 <p className="leading-relaxed mb-4">
                   Le hook <code className="px-2 py-1 bg-muted rounded text-sm">useScrollSpy</code>
@@ -156,6 +167,7 @@ const Index = () => {
                 id="usage"
                 title="Utilisation"
                 registerRef={registerRef}
+                isActive={activeId === "usage"}
               >
                 <p className="leading-relaxed mb-4">
                   L'utilisation du hook est simple et déclarative. Il suffit de fournir un tableau d'IDs
@@ -185,6 +197,7 @@ const Index = () => {
                 id="alternatives"
                 title="Alternatives"
                 registerRef={registerRef}
+                isActive={activeId === "alternatives"}
               >
                 <h3 className="text-xl font-semibold mb-4">Autres approches possibles</h3>
                 <div className="space-y-4">
@@ -216,6 +229,7 @@ const Index = () => {
                 id="conclusion"
                 title="Conclusion"
                 registerRef={registerRef}
+                isActive={activeId === "conclusion"}
               >
                 <p className="text-lg leading-relaxed mb-4">
                   L'approche IntersectionObserver offre le meilleur compromis entre performance,

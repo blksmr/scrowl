@@ -60,6 +60,9 @@ export default {
         "nav-active": "hsl(var(--nav-active))",
         "nav-hover": "hsl(var(--nav-hover))",
         "progress-bg": "hsl(var(--progress-bg))",
+        "debug-menu": "hsl(var(--debug-menu))",
+        "debug-content": "hsl(var(--debug-content))",
+        "debug-active": "hsl(var(--debug-active))",
       },
       backgroundImage: {
         "gradient-hero": "var(--gradient-hero)",

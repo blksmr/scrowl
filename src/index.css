@@ -8,6 +8,10 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Debug Colors */
+    --debug-menu: 280 70% 50%;
+    --debug-content: 200 70% 50%;
+    --debug-active: 150 70% 45%;
     --background: 210 20% 98%;
     --foreground: 215 25% 15%;
 

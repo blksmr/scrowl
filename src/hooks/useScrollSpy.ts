@@ -56,8 +56,9 @@ export function useScrollSpy(
           }
           
           // Debounce the state update to prevent rapid changes during fast scrolling
+          // Only update if the new ID is different from the current state
           debounceTimerRef.current = setTimeout(() => {
-            setActiveId(newActiveId);
+            setActiveId((currentId) => currentId !== newActiveId ? newActiveId : currentId);
           }, debounceMs);
         }
       },

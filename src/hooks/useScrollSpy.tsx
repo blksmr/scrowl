@@ -113,7 +113,7 @@ const DEBUG_STYLES = __DEV__
 
 export const useScrollSpy = (
   sectionIds: string[],
-  containerRef: RefObject<HTMLElement>,
+  containerRef: RefObject<HTMLElement> | null = null,
   { offset = 100, debounceMs = 10 }: ScrollSpyOptions = {},
 ): UseScrollSpyReturn => {
   // States

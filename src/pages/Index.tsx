@@ -355,8 +355,8 @@ const Index = () => {
                     </div>
                   ) : hookSourceCode ? (
                     <div className="h-full overflow-y-auto">
-                      <pre className="code-block text-xs bg-gray-50 p-4 rounded-md">
-                        <code ref={codeRef} className="shj-lang-ts block whitespace-pre font-mono">{hookSourceCode}</code>
+                      <pre>
+                        <code ref={codeRef} className="shj-lang-ts block whitespace-pre font-mono text-sm" style={{ fontSize: '14px' }}>{hookSourceCode}</code>
                       </pre>
                     </div>
                   ) : (

@@ -68,14 +68,10 @@ const LINKS = [
   { label: "Changelog", href: "#" },
 ];
 
-// Offset to account for sticky navbar height
-const NAV_OFFSET = 60;
-
 const Index = () => {
+  // offset: 'auto' (default) automatically detects fixed/sticky elements at top
   const { activeId, registerRef, scrollToSection } = useScrollSpy(
-    SECTIONS.map((s) => s.id),
-    null,
-    { offset: NAV_OFFSET }
+    SECTIONS.map((s) => s.id)
   );
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {

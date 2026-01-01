@@ -13,10 +13,121 @@ import type { Root }         from 'react-dom/client';
 const __DEV__ = import.meta.env.DEV;
 
 type ScrollSpyOptions = {
-    offset?: number;
+    offset?: number | 'auto';
     offsetRatio?: number;
     debounceMs?: number;
     debug?: boolean;
+};
+
+/**
+ * Detects fixed/sticky elements at the top of the viewport that could overlap content.
+ * Returns the bottom edge of the lowest overlapping element.
+ * Also considers sticky elements that would be at top when scrolled (top: 0).
+ */
+const detectTopOverlayHeight = (): number => {
+    let maxHeight = 0;
+    
+    // Find all fixed/sticky elements in the DOM
+    const allElements = document.querySelectorAll('*');
+    
+    for (const el of allElements) {
+        if (el === document.documentElement || el === document.body) continue;
+        
+        const style = window.getComputedStyle(el);
+        const position = style.position;
+        
+        if (position === 'fixed' || position === 'sticky') {
+            const rect = el.getBoundingClientRect();
+            const topValue = style.top;
+            
+            // For fixed elements at the top
+            if (position === 'fixed' && rect.top <= 20 && rect.height > 0) {
+                maxHeight = Math.max(maxHeight, rect.bottom);
+            }
+            
+            // For sticky elements with top: 0 (or similar), use their height
+            // because they WILL be at top when user scrolls
+            if (position === 'sticky') {
+                const topPx = parseFloat(topValue) || 0;
+                // If sticky element would stick near the top
+                if (topPx <= 20 && rect.height > 0) {
+                    // Use the element's height as the offset it will create
+                    maxHeight = Math.max(maxHeight, rect.height + topPx);
+                }
+            }
+        }
+    }
+    
+    // Fallback: check using elementsFromPoint
+    if (maxHeight === 0) {
+        const viewportWidth = window.innerWidth;
+        const sampleX = [viewportWidth * 0.25, viewportWidth * 0.5, viewportWidth * 0.75];
+        
+        for (const x of sampleX) {
+            for (let y = 0; y <= 150; y += 10) {
+                const elements = document.elementsFromPoint(x, y);
+                
+                for (const el of elements) {
+                    if (el === document.documentElement || el === document.body) continue;
+                    
+                    const style = window.getComputedStyle(el);
+                    const position = style.position;
+                    
+                    if (position === 'fixed' || position === 'sticky') {
+                        const rect = el.getBoundingClientRect();
+                        if (rect.top <= 10) {
+                            maxHeight = Math.max(maxHeight, rect.bottom);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return maxHeight;
+};
+
+/**
+ * Checks if a specific element is covered by any fixed/sticky element
+ * Returns the height of the covering element(s) or 0 if not covered
+ */
+const getElementCoverageHeight = (element: HTMLElement): number => {
+    const rect = element.getBoundingClientRect();
+    
+    // Sample points along the top of the element
+    const samplePoints = [
+        { x: rect.left + 10, y: rect.top + 5 },
+        { x: rect.left + rect.width / 2, y: rect.top + 5 },
+        { x: rect.right - 10, y: rect.top + 5 }
+    ];
+    
+    let maxCoverage = 0;
+    
+    for (const point of samplePoints) {
+        if (point.x < 0 || point.y < 0) continue;
+        
+        const elementsAtPoint = document.elementsFromPoint(point.x, point.y);
+        const elementIndex = elementsAtPoint.indexOf(element);
+        
+        // Get elements above this element in the stacking order
+        if (elementIndex > 0) {
+            for (let i = 0; i < elementIndex; i++) {
+                const coveringEl = elementsAtPoint[i];
+                const style = window.getComputedStyle(coveringEl);
+                
+                if (style.position === 'fixed' || style.position === 'sticky') {
+                    const coveringRect = coveringEl.getBoundingClientRect();
+                    // Calculate how much of the element top is covered
+                    const coverage = coveringRect.bottom - rect.top;
+                    if (coverage > 0) {
+                        maxCoverage = Math.max(maxCoverage, coverage);
+                    }
+                }
+            }
+        }
+    }
+    
+    return maxCoverage;
 };
 
 type SectionBounds = {
@@ -122,7 +233,7 @@ const DEBUG_STYLES = __DEV__ ? {
 export const useScrollSpy = (
     sectionIds: string[],
     containerRef: RefObject<HTMLElement> | null = null,
-    { offset = 50, offsetRatio = 0.08, debounceMs = 10, debug = false }: ScrollSpyOptions = {}
+    { offset = 'auto', offsetRatio = 0.08, debounceMs = 10, debug = false }: ScrollSpyOptions = {}
 ): UseScrollSpyReturn => {
 
     const isDebugEnabled = __DEV__ && debug;
@@ -130,6 +241,7 @@ export const useScrollSpy = (
     // States
     const [activeId, setActiveId] = useState<string | null>(sectionIds[0] || null);
     const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
+    const [detectedOffset, setDetectedOffset] = useState<number>(0);
 
     // Refs
     const refs = useRef<Record<string, HTMLElement | null>>({});
@@ -142,6 +254,35 @@ export const useScrollSpy = (
     const hasPendingScroll = useRef<boolean>(false);
     const debugContainerRef = useRef<HTMLDivElement | null>(null);
     const debugRootRef = useRef<Root | null>(null);
+
+    // Get effective offset (auto-detect or manual)
+    const getEffectiveOffset = useCallback((): number => {
+        if (offset === 'auto') {
+            return detectedOffset || detectTopOverlayHeight();
+        }
+        return offset;
+    }, [offset, detectedOffset]);
+
+    // Detect overlay elements on mount and resize
+    useEffect(() => {
+        if (offset !== 'auto') return;
+
+        const updateDetectedOffset = () => {
+            const detected = detectTopOverlayHeight();
+            setDetectedOffset(detected);
+        };
+
+        // Initial detection after a short delay for DOM to settle
+        const timeoutId = setTimeout(updateDetectedOffset, 100);
+        
+        // Re-detect on resize
+        window.addEventListener('resize', updateDetectedOffset);
+        
+        return () => {
+            clearTimeout(timeoutId);
+            window.removeEventListener('resize', updateDetectedOffset);
+        };
+    }, [offset]);
 
     // Callbacks
     const registerRef = useCallback((id: string) => (el: HTMLElement | null) => {
@@ -158,19 +299,24 @@ export const useScrollSpy = (
             const container = containerRef?.current;
             const elementRect = element.getBoundingClientRect();
             
+            // Get the offset - either auto-detected or manual
+            const effectiveOffset = offset === 'auto' 
+                ? detectTopOverlayHeight() + 10 // Add small padding
+                : offset;
+            
             if (container) {
                 // Container-based scrolling
                 const containerRect = container.getBoundingClientRect();
                 const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
                 container.scrollTo({
-                    top: relativeTop - offset,
+                    top: relativeTop - effectiveOffset,
                     behavior: 'smooth'
                 });
             } else {
                 // Window-based scrolling
                 const absoluteTop = elementRect.top + window.scrollY;
                 window.scrollTo({
-                    top: absoluteTop - offset,
+                    top: absoluteTop - effectiveOffset,
                     behavior: 'smooth'
                 });
             }
@@ -223,7 +369,9 @@ export const useScrollSpy = (
         const sections = getSectionBounds();
         if (sections.length === 0) return;
 
-        const effectiveOffset = Math.max(offset, viewportHeight * offsetRatio);
+        // Get base offset - either auto-detected or manual
+        const baseOffset = getEffectiveOffset();
+        const effectiveOffset = Math.max(baseOffset, viewportHeight * offsetRatio);
         const triggerLine = scrollY + effectiveOffset;
         const viewportTop = scrollY;
         const viewportBottom = scrollY + viewportHeight;
@@ -253,7 +401,7 @@ export const useScrollSpy = (
                     scrollY,
                     triggerLine,
                     viewportHeight,
-                    offsetBase: offset,
+                    offsetBase: baseOffset,
                     offsetEffective: effectiveOffset,
                     sections: buildDebugSections(lastId)
                 });
@@ -271,7 +419,7 @@ export const useScrollSpy = (
                     scrollY,
                     triggerLine,
                     viewportHeight,
-                    offsetBase: offset,
+                    offsetBase: baseOffset,
                     offsetEffective: effectiveOffset,
                     sections: buildDebugSections(firstId)
                 });
@@ -347,7 +495,7 @@ export const useScrollSpy = (
                 scrollY,
                 triggerLine,
                 viewportHeight,
-                offsetBase: offset,
+                offsetBase: baseOffset,
                 offsetEffective: effectiveOffset,
                 sections: scores.map((s) => ({
                     id: s.id,
@@ -358,7 +506,7 @@ export const useScrollSpy = (
                 }))
             });
         }
-    }, [sectionIds, offset, offsetRatio, getSectionBounds, isDebugEnabled, containerRef]);
+    }, [sectionIds, getEffectiveOffset, offsetRatio, getSectionBounds, isDebugEnabled, containerRef]);
 
     // Effects
     useEffect(() => {

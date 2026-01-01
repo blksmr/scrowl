@@ -47,8 +47,8 @@ const FEATURES = [
     href: "#",
   },
   {
-    title: "Zero Dependencies",
-    description: "Just React. Nothing else to install or bundle.",
+    title: "Copy & Use",
+    description: "No installation, no bundling. Just copy the hook file into your project and use it.",
     badge: null,
     href: "#",
   },
@@ -75,10 +75,8 @@ const API_ITEMS = [
 
 const LINKS = [
   { label: "GitHub", href: "https://github.com" },
-  { label: "npm", href: "https://npmjs.com" },
-  { label: "Documentation", href: "#" },
+  { label: "Copy Hook", href: "#getting-started" },
   { label: "Examples", href: "#" },
-  { label: "Changelog", href: "#" },
 ];
 
 const Index = () => {
@@ -177,9 +175,10 @@ const Index = () => {
         >
           <p className="text-[#7c7c7c] leading-relaxed">
             <span className="text-foreground font-medium">paradice</span> is a 
-            lightweight React hook that tracks which section of your page is currently 
-            visible. Perfect for documentation sites, landing pages, and anywhere you 
-            need a table of contents that updates as you scroll.
+            ready-to-use React hook that tracks which section of your page is currently 
+            visible. Just copy the hook into your project—no installation needed. Perfect 
+            for documentation sites, landing pages, and anywhere you need a table of contents 
+            that updates as you scroll.
           </p>
           <p className="text-[#9d9d9d] leading-relaxed mt-4 text-sm">
             Built with RAF + throttling for buttery-smooth 60fps performance. 
@@ -250,14 +249,13 @@ const Index = () => {
           </h2>
           
           <p className="text-[#7c7c7c] text-sm mb-4">
-            Install with your favorite package manager:
+            Copy the hook into your project:
           </p>
           
           <pre className="code-block mb-6">
             <code>
-              <span className="text-[#7c3aed]">npm</span> install paradice{"\n\n"}
-              <span className="text-[#6b7280]"># or</span>{"\n"}
-              <span className="text-[#7c3aed]">yarn</span> add paradice
+              <span className="text-[#6b7280]"># Copy src/hooks/useScrollSpy.tsx to your project</span>{"\n"}
+              <span className="text-[#6b7280]"># That's it! No installation needed.</span>
             </code>
           </pre>
           
@@ -267,9 +265,9 @@ const Index = () => {
           
           <pre className="code-block">
             <code>
-              <span className="text-[#7c3aed]">import</span> {"{"} useScrollSpy {"}"} <span className="text-[#7c3aed]">from</span> <span className="text-[#059669]">'paradice'</span>{"\n\n"}
+              <span className="text-[#7c3aed]">import</span> {"{"} useScrollSpy {"}"} <span className="text-[#7c3aed]">from</span> <span className="text-[#059669]">'./hooks/useScrollSpy'</span>{"\n\n"}
               <span className="text-[#7c3aed]">function</span> <span className="text-[#2563eb]">TableOfContents</span>() {"{"}{"\n"}
-              {"  "}<span className="text-[#7c3aed]">const</span> {"{"} activeId, registerRef {"}"} = <span className="text-[#2563eb]">useScrollSpy</span>([{"\n"}
+              {"  "}<span className="text-[#7c3aed]">const</span> {"{"} activeId, registerRef, scrollToSection {"}"} = <span className="text-[#2563eb]">useScrollSpy</span>([{"\n"}
               {"    "}<span className="text-[#059669]">'intro'</span>,{"\n"}
               {"    "}<span className="text-[#059669]">'features'</span>,{"\n"}
               {"    "}<span className="text-[#059669]">'api'</span>{"\n"}
@@ -277,14 +275,8 @@ const Index = () => {
               {"  "}<span className="text-[#7c3aed]">return</span> ({"\n"}
               {"    "}<span className="text-[#6b7280]">{"<>"}</span>{"\n"}
               {"      "}<span className="text-[#2563eb]">{"<nav>"}</span>{"\n"}
-              {"        "}{"{"}<span className="text-[#9ca3af]">sections</span>.<span className="text-[#2563eb]">map</span>(id {"=>"} ({"\n"}
-              {"          "}<span className="text-[#2563eb]">{"<a"}</span>{"\n"}
-              {"            "}<span className="text-[#9ca3af]">key</span>={"{"}<span className="text-[#9ca3af]">id</span>{"}"}{"\n"}
-              {"            "}<span className="text-[#9ca3af]">className</span>={"{"}activeId === id ? <span className="text-[#059669]">'active'</span> : <span className="text-[#059669]">''</span>{"}"}{"\n"}
-              {"          "}<span className="text-[#2563eb]">{">"}</span>{"\n"}
-              {"            "}{"{"}<span className="text-[#9ca3af]">id</span>{"}"}{"\n"}
-              {"          "}<span className="text-[#2563eb]">{"</a>"}</span>{"\n"}
-              {"        "})){")}"}{"\n"}
+              {"        "}<span className="text-[#2563eb]">{"<button"}</span> <span className="text-[#9ca3af]">onClick</span>={"{"}() {"=>"} scrollToSection(<span className="text-[#059669]">'intro'</span>){"}"}<span className="text-[#2563eb]">{">"}</span>Intro<span className="text-[#2563eb]">{"</button>"}</span>{"\n"}
+              {"        "}<span className="text-[#2563eb]">{"<button"}</span> <span className="text-[#9ca3af]">onClick</span>={"{"}() {"=>"} scrollToSection(<span className="text-[#059669]">'features'</span>){"}"}<span className="text-[#2563eb]">{">"}</span>Features<span className="text-[#2563eb]">{"</button>"}</span>{"\n"}
               {"      "}<span className="text-[#2563eb]">{"</nav>"}</span>{"\n"}
               {"      "}{"\n"}
               {"      "}<span className="text-[#2563eb]">{"<section"}</span> <span className="text-[#9ca3af]">id</span>=<span className="text-[#059669]">"intro"</span> <span className="text-[#9ca3af]">ref</span>={"{"}registerRef(<span className="text-[#059669]">'intro'</span>){"}"}<span className="text-[#2563eb]">{">"}</span>{"\n"}

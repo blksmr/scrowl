@@ -1,7 +1,8 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "paradice",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A ready-to-use React scroll spy hook with automatic overlay detection",
   "type": "module",
   "scripts": {
     "dev": "vite",

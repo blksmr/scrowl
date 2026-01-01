@@ -116,12 +116,12 @@ const Index = () => {
         
         {/* Header */}
         <header className="mb-12">
-          <div className="text-2xl mb-4">(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧</div>
+          <div className="text-2xl mb-4">🎲</div>
           <h1 className="text-foreground text-xl font-medium mb-2">
-            Hey! Welcome to scroll-spy-react
+            Welcome to paradice
           </h1>
           <p className="text-[#9d9d9d] text-sm">
-            A tiny library that makes navigation easier.
+            Roll with the best scroll spy for React.
           </p>
         </header>
 
@@ -159,7 +159,7 @@ const Index = () => {
           className="mb-10"
         >
           <p className="text-[#7c7c7c] leading-relaxed">
-            <span className="text-foreground font-medium">scroll-spy-react</span> is a 
+            <span className="text-foreground font-medium">paradice</span> is a 
             lightweight React hook that tracks which section of your page is currently 
             visible. Perfect for documentation sites, landing pages, and anywhere you 
             need a table of contents that updates as you scroll.
@@ -222,10 +222,10 @@ const Index = () => {
           </p>
           
           <pre className="code-block mb-6">
-{`npm install scroll-spy-react
+{`npm install paradice
 
 # or
-yarn add scroll-spy-react`}
+yarn add paradice`}
           </pre>
           
           <p className="text-[#7c7c7c] text-sm mb-4">
@@ -233,7 +233,7 @@ yarn add scroll-spy-react`}
           </p>
           
           <pre className="code-block">
-{`import { useScrollSpy } from 'scroll-spy-react'
+{`import { useScrollSpy } from 'paradice'
 
 function TableOfContents() {
   const { activeId, registerRef } = useScrollSpy([
@@ -323,7 +323,7 @@ function TableOfContents() {
 
         {/* Copyright */}
         <div className="text-[#9d9d9d] text-xs">
-          <p>© 2026 scroll-spy-react</p>
+          <p>© 2026 paradice</p>
           <p className="mt-1">
             Made with ☕ by{" "}
             <a href="#" className="link-hover">

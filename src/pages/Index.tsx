@@ -316,8 +316,8 @@ const Index = () => {
                   <ArrowUpRight className="w-3 h-3" />
                 </button>
               </DialogTrigger>
-              <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0 flex flex-row items-start justify-between">
+              <DialogContent className="max-w-5xl h-[90vh] gap-1 flex flex-col p-0">
+                <DialogHeader className="space-y-0 px-6 pt-6 pb-4 border-b border-border flex-shrink-0 flex flex-row items-center justify-between">
                   <div>
                     <DialogTitle className="text-lg">useScrollSpy.tsx</DialogTitle>
                     <DialogDescription className="text-sm text-[#7c7c7c]">
@@ -348,7 +348,7 @@ const Index = () => {
                     </button>
                   )}
                 </DialogHeader>
-                <div className="flex-1 min-h-0 p-6">
+                <div className="flex-1 min-h-0 p-2 pt-0">
                   {isLoadingHook ? (
                     <div className="flex items-center justify-center h-full text-[#7c7c7c]">
                       Loading...

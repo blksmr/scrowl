@@ -194,7 +194,8 @@ const DEBUG_STYLES = __DEV__ ? {
         left: 0,
         right: 0,
         height: '1px',
-        background: 'linear-gradient(90deg, transparent, #a855f7, #a855f7, transparent)',
+        backgroundColor: '#a855f7',
+        opacity: 0.6,
         zIndex: 9998,
         pointerEvents: 'none' as const
     },

@@ -261,6 +261,8 @@ export const useScrollSpy = (
     const hasPendingScroll = useRef<boolean>(false);
     const debugContainerRef = useRef<HTMLDivElement | null>(null);
     const debugRootRef = useRef<Root | null>(null);
+    const lastDebugUpdate = useRef<number>(0);
+    const debugUpdateTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Get effective offset (auto-detect or manual)
     const getEffectiveOffset = useCallback((): number => {
@@ -337,6 +339,28 @@ export const useScrollSpy = (
         activeIdRef.current = activeId;
     }, [activeId]);
 
+    // Throttled debug info update at 20fps (50ms interval)
+    const throttledSetDebugInfo = useCallback((info: DebugInfo) => {
+        const now = Date.now();
+        const timeSinceLastUpdate = now - lastDebugUpdate.current;
+        
+        if (timeSinceLastUpdate >= 50) {
+            // Update immediately if enough time has passed
+            lastDebugUpdate.current = now;
+            setDebugInfo(info);
+        } else {
+            // Schedule update for later
+            if (debugUpdateTimeoutId.current) {
+                clearTimeout(debugUpdateTimeoutId.current);
+            }
+            debugUpdateTimeoutId.current = setTimeout(() => {
+                lastDebugUpdate.current = Date.now();
+                setDebugInfo(info);
+                debugUpdateTimeoutId.current = null;
+            }, 50 - timeSinceLastUpdate);
+        }
+    }, []);
+
     const getSectionBounds = useCallback((): SectionBounds[] => {
         const container = containerRef?.current;
         
@@ -404,7 +428,7 @@ export const useScrollSpy = (
             activeIdRef.current = lastId;
             setActiveId((prev) => (prev !== lastId ? lastId : prev));
             if (isDebugEnabled) {
-                setDebugInfo({
+                throttledSetDebugInfo({
                     scrollY,
                     triggerLine,
                     viewportHeight,
@@ -422,7 +446,7 @@ export const useScrollSpy = (
             activeIdRef.current = firstId;
             setActiveId((prev) => (prev !== firstId ? firstId : prev));
             if (isDebugEnabled) {
-                setDebugInfo({
+                throttledSetDebugInfo({
                     scrollY,
                     triggerLine,
                     viewportHeight,
@@ -498,7 +522,7 @@ export const useScrollSpy = (
         }
 
         if (isDebugEnabled) {
-            setDebugInfo({
+            throttledSetDebugInfo({
                 scrollY,
                 triggerLine,
                 viewportHeight,
@@ -513,7 +537,7 @@ export const useScrollSpy = (
                 }))
             });
         }
-    }, [sectionIds, getEffectiveOffset, offsetRatio, getSectionBounds, isDebugEnabled, containerRef]);
+    }, [sectionIds, getEffectiveOffset, offsetRatio, getSectionBounds, isDebugEnabled, containerRef, throttledSetDebugInfo]);
 
     // Effects
     useEffect(() => {
@@ -576,6 +600,10 @@ export const useScrollSpy = (
             if (throttleTimeoutId.current) {
                 clearTimeout(throttleTimeoutId.current);
                 throttleTimeoutId.current = null;
+            }
+            if (debugUpdateTimeoutId.current) {
+                clearTimeout(debugUpdateTimeoutId.current);
+                debugUpdateTimeoutId.current = null;
             }
             isThrottled.current = false;
             hasPendingScroll.current = false;
@@ -749,7 +777,8 @@ export const useScrollSpy = (
                                             ? 'linear-gradient(90deg, #a855f7, #7c3aed)' 
                                             : 'rgba(255,255,255,0.2)',
                                         borderRadius: '2px',
-                                        transition: 'width 0.15s ease'
+                                        transition: 'width 50ms ease-out',
+                                        willChange: 'width'
                                     }} />
                                 </div>
                                 <div style={{ 

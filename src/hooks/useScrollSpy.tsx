@@ -39,26 +39,34 @@ const detectTopOverlayHeight = (): number => {
         if (position === 'fixed' || position === 'sticky') {
             const rect = el.getBoundingClientRect();
             const topValue = style.top;
+            const topPx = parseFloat(topValue) || 0;
             
             // For fixed elements at the top
-            if (position === 'fixed' && rect.top <= 20 && rect.height > 0) {
-                maxHeight = Math.max(maxHeight, rect.bottom);
+            if (position === 'fixed') {
+                // Check if element is currently at/near the top
+                if (rect.top <= 20 && rect.height > 0) {
+                    maxHeight = Math.max(maxHeight, rect.bottom);
+                }
+                // Also check if element has top: 0 or similar (will be at top)
+                else if (topPx <= 20 && rect.height > 0) {
+                    maxHeight = Math.max(maxHeight, rect.height + topPx);
+                }
             }
             
-            // For sticky elements with top: 0 (or similar), use their height
-            // because they WILL be at top when user scrolls
-            if (position === 'sticky') {
-                const topPx = parseFloat(topValue) || 0;
-                // If sticky element would stick near the top
-                if (topPx <= 20 && rect.height > 0) {
-                    // Use the element's height as the offset it will create
-                    maxHeight = Math.max(maxHeight, rect.height + topPx);
+            // For sticky elements with top: 0 (or similar), always use their height
+            // because they WILL be at top when user scrolls, regardless of current position
+            if (position === 'sticky' && topPx <= 20) {
+                // Use offsetHeight for more reliable height detection (includes padding)
+                const elementHeight = (el as HTMLElement).offsetHeight || rect.height;
+                if (elementHeight > 0) {
+                    // For sticky, we use the height + top offset (where it will stick)
+                    maxHeight = Math.max(maxHeight, elementHeight + topPx);
                 }
             }
         }
     }
     
-    // Fallback: check using elementsFromPoint
+    // Fallback: check using elementsFromPoint (only if nothing found above)
     if (maxHeight === 0) {
         const viewportWidth = window.innerWidth;
         const sampleX = [viewportWidth * 0.25, viewportWidth * 0.5, viewportWidth * 0.75];
@@ -75,7 +83,7 @@ const detectTopOverlayHeight = (): number => {
                     
                     if (position === 'fixed' || position === 'sticky') {
                         const rect = el.getBoundingClientRect();
-                        if (rect.top <= 10) {
+                        if (rect.top <= 10 && rect.height > 0) {
                             maxHeight = Math.max(maxHeight, rect.bottom);
                         }
                     }
@@ -248,7 +256,13 @@ export const useScrollSpy = (
     // States
     const [activeId, setActiveId] = useState<string | null>(sectionIds[0] || null);
     const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
-    const [detectedOffset, setDetectedOffset] = useState<number>(0);
+    // Initialize with immediate detection to avoid timing issues
+    const [detectedOffset, setDetectedOffset] = useState<number>(() => {
+        if (offset === 'auto' && typeof window !== 'undefined') {
+            return detectTopOverlayHeight();
+        }
+        return 0;
+    });
 
     // Refs
     const refs = useRef<Record<string, HTMLElement | null>>({});
@@ -273,7 +287,7 @@ export const useScrollSpy = (
     }, [offset, detectedOffset]);
 
     // Detect overlay elements on mount and resize
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (offset !== 'auto') return;
 
         const updateDetectedOffset = () => {
@@ -281,15 +295,20 @@ export const useScrollSpy = (
             setDetectedOffset(detected);
         };
 
-        // Initial detection after a short delay for DOM to settle
-        const timeoutId = setTimeout(updateDetectedOffset, 100);
+        // Initial detection: useLayoutEffect runs after DOM layout, so detection is immediate
+        updateDetectedOffset();
         
-        // Re-detect on resize
-        window.addEventListener('resize', updateDetectedOffset);
+        // Re-detect on resize (debounced)
+        let resizeTimeout: ReturnType<typeof setTimeout>;
+        const handleResize = () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(updateDetectedOffset, 100);
+        };
+        window.addEventListener('resize', handleResize);
         
         return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener('resize', updateDetectedOffset);
+            clearTimeout(resizeTimeout);
+            window.removeEventListener('resize', handleResize);
         };
     }, [offset]);
 

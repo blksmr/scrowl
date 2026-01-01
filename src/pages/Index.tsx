@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
 import { ArrowUpRight, Copy, Check } from "lucide-react";
 import {
@@ -116,6 +116,19 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const codeRef = useRef<HTMLElement>(null);
   
+  // Callback ref to highlight when element is mounted
+  const codeRefCallback = (node: HTMLElement | null) => {
+    if (node) {
+      codeRef.current = node;
+      // Highlight immediately when element is mounted
+      if (hookSourceCode && isModalOpen) {
+        setTimeout(() => {
+          highlightElement(node, 'ts');
+        }, 0);
+      }
+    }
+  };
+  
   // offset: 'auto' (default) automatically detects fixed/sticky elements at top
   // Disable debug mode when modal is open
   const { activeId, registerRef, scrollToSection } = useScrollSpy(
@@ -129,12 +142,18 @@ const Index = () => {
     scrollToSection(sectionId);
   };
 
-  // Highlight code when hookSourceCode changes
-  useEffect(() => {
-    if (hookSourceCode && codeRef.current) {
-      highlightElement(codeRef.current, 'ts');
+  // Highlight code when hookSourceCode changes or modal opens
+  useLayoutEffect(() => {
+    if (hookSourceCode && codeRef.current && isModalOpen) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      const rafId = requestAnimationFrame(() => {
+        if (codeRef.current) {
+          highlightElement(codeRef.current, 'ts');
+        }
+      });
+      return () => cancelAnimationFrame(rafId);
     }
-  }, [hookSourceCode]);
+  }, [hookSourceCode, isModalOpen]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -356,7 +375,7 @@ const Index = () => {
                   ) : hookSourceCode ? (
                     <div className="h-full overflow-y-auto">
                       <pre>
-                        <code ref={codeRef} className="shj-lang-ts block whitespace-pre font-mono text-sm" style={{ fontSize: '14px' }}>{hookSourceCode}</code>
+                        <code ref={codeRefCallback} className="shj-lang-ts block whitespace-pre font-mono text-sm" style={{ fontSize: '14px' }}>{hookSourceCode}</code>
                       </pre>
                     </div>
                   ) : (

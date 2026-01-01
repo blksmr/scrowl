@@ -10,21 +10,33 @@ const SECTIONS = [
 
 const FEATURES = [
   {
-    title: "IntersectionObserver API",
-    description: "Uses the native browser API for optimal performance. No polling, no jank.",
-    badge: "Stable",
+    title: "Auto Overlay Detection",
+    description: "Automatically detects sticky/fixed headers and adjusts scroll offset. No manual config needed.",
+    badge: "New",
     href: "#",
   },
   {
-    title: "Variable Height Sections",
-    description: "Automatically handles sections of any height without manual configuration.",
+    title: "Buttery Smooth",
+    description: "RAF + throttling for 60fps performance. No jank, no polling, just smooth.",
     badge: null,
     href: "#",
   },
   {
-    title: "Window & Container Support",
+    title: "Hysteresis Scoring",
+    description: "Smart algorithm prevents jittery switching between sections while scrolling.",
+    badge: null,
+    href: "#",
+  },
+  {
+    title: "Window & Container",
     description: "Works with both window scroll and custom scrollable containers.",
-    badge: "New",
+    badge: null,
+    href: "#",
+  },
+  {
+    title: "Debug Mode",
+    description: "Visual overlay showing scroll position, trigger line, and section scores.",
+    badge: "Dev",
     href: "#",
   },
   {
@@ -165,8 +177,8 @@ const Index = () => {
             need a table of contents that updates as you scroll.
           </p>
           <p className="text-[#9d9d9d] leading-relaxed mt-4 text-sm">
-            Built on the IntersectionObserver API for buttery-smooth performance. 
-            No scroll listeners polling at 60fps. Your users' batteries will thank you. ⚡
+            Built with RAF + throttling for buttery-smooth 60fps performance. 
+            Smart hysteresis prevents jittery section switching. Your users will thank you. ⚡
           </p>
         </section>
 

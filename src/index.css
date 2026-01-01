@@ -82,7 +82,7 @@
   }
   
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-sm bg-primary text-white ml-2;
+    @apply px-2 py-0.5 bg-purple-100 rounded-sm text-sm text-purple-900 font-medium;
   }
   
   .code-block {

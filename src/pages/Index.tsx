@@ -185,7 +185,7 @@ const Index = () => {
           <ul className="space-y-5">
             {FEATURES.map((feature) => (
               <li key={feature.title}>
-                <div className="flex items-center">
+                <div className="flex items-center space-x-2">
                   <a 
                     href={feature.href}
                     className="text-foreground link-hover inline-flex items-center gap-1"
@@ -222,10 +222,11 @@ const Index = () => {
           </p>
           
           <pre className="code-block mb-6">
-{`npm install paradice
-
-# or
-yarn add paradice`}
+            <code>
+              <span className="text-[#7c3aed]">npm</span> install paradice{"\n\n"}
+              <span className="text-[#6b7280]"># or</span>{"\n"}
+              <span className="text-[#7c3aed]">yarn</span> add paradice
+            </code>
           </pre>
           
           <p className="text-[#7c7c7c] text-sm mb-4">
@@ -233,34 +234,34 @@ yarn add paradice`}
           </p>
           
           <pre className="code-block">
-{`import { useScrollSpy } from 'paradice'
-
-function TableOfContents() {
-  const { activeId, registerRef } = useScrollSpy([
-    'intro',
-    'features', 
-    'api'
-  ])
-
-  return (
-    <>
-      <nav>
-        {sections.map(id => (
-          <a 
-            key={id}
-            className={activeId === id ? 'active' : ''}
-          >
-            {id}
-          </a>
-        ))}
-      </nav>
-      
-      <section id="intro" ref={registerRef('intro')}>
-        ...
-      </section>
-    </>
-  )
-}`}
+            <code>
+              <span className="text-[#7c3aed]">import</span> {"{"} useScrollSpy {"}"} <span className="text-[#7c3aed]">from</span> <span className="text-[#059669]">'paradice'</span>{"\n\n"}
+              <span className="text-[#7c3aed]">function</span> <span className="text-[#2563eb]">TableOfContents</span>() {"{"}{"\n"}
+              {"  "}<span className="text-[#7c3aed]">const</span> {"{"} activeId, registerRef {"}"} = <span className="text-[#2563eb]">useScrollSpy</span>([{"\n"}
+              {"    "}<span className="text-[#059669]">'intro'</span>,{"\n"}
+              {"    "}<span className="text-[#059669]">'features'</span>,{"\n"}
+              {"    "}<span className="text-[#059669]">'api'</span>{"\n"}
+              {"  "}]){"\n\n"}
+              {"  "}<span className="text-[#7c3aed]">return</span> ({"\n"}
+              {"    "}<span className="text-[#6b7280]">{"<>"}</span>{"\n"}
+              {"      "}<span className="text-[#2563eb]">{"<nav>"}</span>{"\n"}
+              {"        "}{"{"}<span className="text-[#9ca3af]">sections</span>.<span className="text-[#2563eb]">map</span>(id {"=>"} ({"\n"}
+              {"          "}<span className="text-[#2563eb]">{"<a"}</span>{"\n"}
+              {"            "}<span className="text-[#9ca3af]">key</span>={"{"}<span className="text-[#9ca3af]">id</span>{"}"}{"\n"}
+              {"            "}<span className="text-[#9ca3af]">className</span>={"{"}activeId === id ? <span className="text-[#059669]">'active'</span> : <span className="text-[#059669]">''</span>{"}"}{"\n"}
+              {"          "}<span className="text-[#2563eb]">{">"}</span>{"\n"}
+              {"            "}{"{"}<span className="text-[#9ca3af]">id</span>{"}"}{"\n"}
+              {"          "}<span className="text-[#2563eb]">{"</a>"}</span>{"\n"}
+              {"        "})){")}"}{"\n"}
+              {"      "}<span className="text-[#2563eb]">{"</nav>"}</span>{"\n"}
+              {"      "}{"\n"}
+              {"      "}<span className="text-[#2563eb]">{"<section"}</span> <span className="text-[#9ca3af]">id</span>=<span className="text-[#059669]">"intro"</span> <span className="text-[#9ca3af]">ref</span>={"{"}registerRef(<span className="text-[#059669]">'intro'</span>){"}"}<span className="text-[#2563eb]">{">"}</span>{"\n"}
+              {"        "}...{"\n"}
+              {"      "}<span className="text-[#2563eb]">{"</section>"}</span>{"\n"}
+              {"    "}<span className="text-[#6b7280]">{"</>"}</span>{"\n"}
+              {"  "}){"\n"}
+              {"}"}
+            </code>
           </pre>
         </section>
 

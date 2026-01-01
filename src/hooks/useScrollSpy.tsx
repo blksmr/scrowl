@@ -20,79 +20,51 @@ type ScrollSpyOptions = {
 };
 
 /**
- * Detects fixed/sticky elements at the top of the viewport that could overlap content.
+ * Detects fixed/sticky elements currently at the top of the viewport.
  * Returns the bottom edge of the lowest overlapping element.
- * Also considers sticky elements that would be at top when scrolled (top: 0).
  */
 const detectTopOverlayHeight = (): number => {
-    let maxHeight = 0;
-    
-    // Find all fixed/sticky elements in the DOM
+    let maxBottom = 0;
+
     const allElements = document.querySelectorAll('*');
-    
+
     for (const el of allElements) {
         if (el === document.documentElement || el === document.body) continue;
+
+        const htmlEl = el as HTMLElement;
+        
+        // Skip debug overlay elements by ID
+        if (htmlEl.id === 'scrollspy-debug-root') continue;
         
         const style = window.getComputedStyle(el);
         const position = style.position;
-        
-        if (position === 'fixed' || position === 'sticky') {
-            const rect = el.getBoundingClientRect();
-            const topValue = style.top;
-            const topPx = parseFloat(topValue) || 0;
-            
-            // For fixed elements at the top
-            if (position === 'fixed') {
-                // Check if element is currently at/near the top
-                if (rect.top <= 20 && rect.height > 0) {
-                    maxHeight = Math.max(maxHeight, rect.bottom);
-                }
-                // Also check if element has top: 0 or similar (will be at top)
-                else if (topPx <= 20 && rect.height > 0) {
-                    maxHeight = Math.max(maxHeight, rect.height + topPx);
-                }
+
+        if (position !== 'fixed' && position !== 'sticky') continue;
+
+        // Skip debug overlay elements by checking z-index (debug overlay uses 9999, trigger line uses 9998)
+        const zIndex = parseInt(style.zIndex, 10);
+        if (!isNaN(zIndex) && zIndex >= 9998) continue;
+
+        // Skip elements that are part of the debug overlay by checking parent
+        let parent = htmlEl.parentElement;
+        let isDebugElement = false;
+        while (parent && parent !== document.body) {
+            if (parent.id === 'scrollspy-debug-root') {
+                isDebugElement = true;
+                break;
             }
-            
-            // For sticky elements with top: 0 (or similar), always use their height
-            // because they WILL be at top when user scrolls, regardless of current position
-            if (position === 'sticky' && topPx <= 20) {
-                // Use offsetHeight for more reliable height detection (includes padding)
-                const elementHeight = (el as HTMLElement).offsetHeight || rect.height;
-                if (elementHeight > 0) {
-                    // For sticky, we use the height + top offset (where it will stick)
-                    maxHeight = Math.max(maxHeight, elementHeight + topPx);
-                }
-            }
+            parent = parent.parentElement;
+        }
+        if (isDebugElement) continue;
+
+        const rect = el.getBoundingClientRect();
+
+        if (rect.top >= 0 && rect.top <= 50 && rect.height > 0 && rect.width > 0) {
+            maxBottom = Math.max(maxBottom, rect.bottom);
         }
     }
-    
-    // Fallback: check using elementsFromPoint (only if nothing found above)
-    if (maxHeight === 0) {
-        const viewportWidth = window.innerWidth;
-        const sampleX = [viewportWidth * 0.25, viewportWidth * 0.5, viewportWidth * 0.75];
-        
-        for (const x of sampleX) {
-            for (let y = 0; y <= 150; y += 10) {
-                const elements = document.elementsFromPoint(x, y);
-                
-                for (const el of elements) {
-                    if (el === document.documentElement || el === document.body) continue;
-                    
-                    const style = window.getComputedStyle(el);
-                    const position = style.position;
-                    
-                    if (position === 'fixed' || position === 'sticky') {
-                        const rect = el.getBoundingClientRect();
-                        if (rect.top <= 10 && rect.height > 0) {
-                            maxHeight = Math.max(maxHeight, rect.bottom);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    return maxHeight;
+
+    return maxBottom;
 };
 
 /**
@@ -312,6 +284,19 @@ export const useScrollSpy = (
         };
     }, [offset]);
 
+    // Re-detect overlay when debug mode changes (debug overlay affects detection)
+    useLayoutEffect(() => {
+        if (offset !== 'auto') return;
+        
+        // Small delay to ensure debug overlay is created/destroyed
+        const timeoutId = setTimeout(() => {
+            const detected = detectTopOverlayHeight();
+            setDetectedOffset(detected);
+        }, 0);
+        
+        return () => clearTimeout(timeoutId);
+    }, [offset, isDebugEnabled]);
+
     // Callbacks
     const registerRef = useCallback((id: string) => (el: HTMLElement | null) => {
         if (el) {
@@ -328,9 +313,7 @@ export const useScrollSpy = (
             const elementRect = element.getBoundingClientRect();
             
             // Get the offset - either auto-detected or manual
-            const effectiveOffset = offset === 'auto' 
-                ? detectTopOverlayHeight() + 10 // Add small padding
-                : offset;
+            const effectiveOffset = getEffectiveOffset() + 10; // Add small padding
             
             if (container) {
                 // Container-based scrolling
@@ -352,7 +335,7 @@ export const useScrollSpy = (
             activeIdRef.current = id;
             setActiveId(id);
         }
-    }, [containerRef, offset]);
+    }, [containerRef, getEffectiveOffset]);
 
     useEffect(() => {
         activeIdRef.current = activeId;

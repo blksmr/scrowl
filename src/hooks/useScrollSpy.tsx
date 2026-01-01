@@ -147,18 +147,20 @@ export const useScrollSpy = (
   }, []);
 
   const getSectionBounds = useCallback((): SectionBounds[] => {
-    const container = containerRef.current;
-    if (!container) return [];
-
-    const containerRect = container.getBoundingClientRect();
-    const containerScrollTop = container.scrollTop;
+    const container = containerRef?.current;
+    
+    // Use window-based scrolling when no container is provided
+    const scrollTop = container ? container.scrollTop : window.scrollY;
+    const containerTop = container ? container.getBoundingClientRect().top : 0;
 
     return sectionIds
       .map((id) => {
         const el = refs.current[id];
         if (!el) return null;
         const rect = el.getBoundingClientRect();
-        const relativeTop = rect.top - containerRect.top + containerScrollTop;
+        const relativeTop = container 
+          ? rect.top - containerTop + scrollTop
+          : rect.top + window.scrollY;
         return {
           id,
           top: relativeTop,
@@ -170,12 +172,12 @@ export const useScrollSpy = (
   }, [sectionIds, containerRef]);
 
   const calculateActiveSection = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const scrollY = container.scrollTop;
-    const viewportHeight = container.clientHeight;
-    const scrollHeight = container.scrollHeight;
+    const container = containerRef?.current;
+    
+    // Use window-based values when no container is provided
+    const scrollY = container ? container.scrollTop : window.scrollY;
+    const viewportHeight = container ? container.clientHeight : window.innerHeight;
+    const scrollHeight = container ? container.scrollHeight : document.documentElement.scrollHeight;
     const scrollDirection = scrollY > lastScrollY.current ? "down" : "up";
     lastScrollY.current = scrollY;
 
@@ -298,8 +300,8 @@ export const useScrollSpy = (
 
   // Effects
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const container = containerRef?.current;
+    const scrollTarget = container || window;
 
     const handleScroll = (): void => {
       if (debounceTimer.current) {
@@ -316,10 +318,10 @@ export const useScrollSpy = (
 
     calculateActiveSection();
 
-    container.addEventListener("scroll", handleScroll, { passive: true });
+    scrollTarget.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      scrollTarget.removeEventListener("scroll", handleScroll);
       if (rafId.current) {
         cancelAnimationFrame(rafId.current);
       }
@@ -357,7 +359,7 @@ export const useScrollSpy = (
       function DebugOverlayComponent(): JSX.Element | null {
         if (!__DEV__ || !DEBUG_SCROLL_SPY || !debugInfo || !DEBUG_STYLES) return null;
 
-        const container = containerRef.current;
+        const container = containerRef?.current;
         const containerRect = container?.getBoundingClientRect();
         const triggerLineTop = containerRect ? containerRect.top + offset : offset;
 

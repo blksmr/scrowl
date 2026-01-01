@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useScrollSpy } from "@/hooks/useScrollSpy";
 import { ArrowUpRight } from "lucide-react";
 
@@ -81,9 +82,13 @@ const LINKS = [
 ];
 
 const Index = () => {
+  const [debugMode, setDebugMode] = useState(false);
+  
   // offset: 'auto' (default) automatically detects fixed/sticky elements at top
   const { activeId, registerRef, scrollToSection } = useScrollSpy(
-    SECTIONS.map((s) => s.id)
+    SECTIONS.map((s) => s.id),
+    null,
+    { debug: debugMode }
   );
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
@@ -198,15 +203,30 @@ const Index = () => {
             {FEATURES.map((feature) => (
               <li key={feature.title}>
                 <div className="flex items-center space-x-2">
-                  <a 
-                    href={feature.href}
-                    className="text-foreground link-hover inline-flex items-center gap-1"
-                  >
-                    {feature.title}
-                    <ArrowUpRight className="w-3 h-3" />
-                  </a>
+                  {feature.title === "Debug Mode" ? (
+                    <button
+                      onClick={() => setDebugMode(!debugMode)}
+                      className={`text-foreground link-hover inline-flex items-center gap-1 transition-colors ${
+                        debugMode ? "text-[#7c3aed]" : ""
+                      }`}
+                    >
+                      {feature.title}
+                      {debugMode ? " ✓" : ""}
+                      <ArrowUpRight className="w-3 h-3" />
+                    </button>
+                  ) : (
+                    <a 
+                      href={feature.href}
+                      className="text-foreground link-hover inline-flex items-center gap-1"
+                    >
+                      {feature.title}
+                      <ArrowUpRight className="w-3 h-3" />
+                    </a>
+                  )}
                   {feature.badge && (
-                    <span className="badge">{feature.badge}</span>
+                    <span className={`badge ${feature.title === "Debug Mode" && debugMode ? "bg-[#7c3aed] text-white" : ""}`}>
+                      {feature.title === "Debug Mode" && debugMode ? "Active" : feature.badge}
+                    </span>
                   )}
                 </div>
                 <p className="text-[#9d9d9d] text-sm mt-1">

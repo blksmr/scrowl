@@ -1,4 +1,4 @@
-# scrollmark 🎲
+# scrollmark 📍
 
 A lightweight, ready-to-use React hook for scroll spying with automatic overlay detection.
 

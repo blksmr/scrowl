@@ -232,7 +232,7 @@ const Index = () => {
             <div
               className={`h-[2px] rounded-full transition-all duration-300 ${
                 activeId === section.id
-                  ? "w-8 bg-primary"
+                  ? "w-6 bg-primary"
                   : "w-4 bg-gray-300 group-hover:bg-gray-400 group-hover:w-6"
               }`}
             />

@@ -154,7 +154,7 @@ export function ScrollSpyDebugOverlay({
                     }}
                 >
                     <div style={{ fontSize: '11px', color: COLORS.textSecondary }}>
-                        ◇ Paradice Debug
+                        ◇ scrollmark debug
                     </div>
                 </div>
 

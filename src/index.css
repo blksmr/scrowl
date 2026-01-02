@@ -16,8 +16,8 @@
     --popover: 0 0% 98.4%;
     --popover-foreground: 0 0% 27%;
     
-    --primary: 270 50% 55%; /* Purple for badges */
-    --primary-foreground: 0 0% 100%;
+    --primary: 4 80% 55%; /* Red for badges */
+    --primary-foreground: 4 100% 95%;
     
     --secondary: 0 0% 95%;
     --secondary-foreground: 0 0% 27%;
@@ -82,7 +82,7 @@
   }
   
   .badge {
-    @apply px-2 py-0.5 bg-purple-100 rounded-sm text-sm text-purple-900 font-medium;
+    @apply px-2 py-0.5 bg-primary-foreground rounded-sm text-sm text-primary font-medium;
   }
   
   .code-block {

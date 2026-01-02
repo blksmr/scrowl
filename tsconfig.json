@@ -2,6 +2,6 @@
   "files": [],
   "references": [
     { "path": "./website" },
-    { "path": "./packages/scroll-spy" }
+    { "path": "./packages/Scrowl" }
   ]
 }

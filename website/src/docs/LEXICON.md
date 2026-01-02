@@ -1,4 +1,4 @@
-# Lexique du Scroll Spy
+# Lexique du Scrowl
 
 ## Terminologie
 
@@ -31,9 +31,9 @@ Index.tsx (Page principale)
 
 ## Hook principal
 
-### **useScrollSpy**
-- **Fichier** : `packages/scroll-spy/src/useScrollSpy.ts`
-- **Package** : `@scrollmark/scroll-spy`
+### **useScrowl**
+- **Fichier** : `packages/Scrowl/src/useScrowl.ts`
+- **Package** : `Scrowl`
 - **Input** : Liste des `sectionIds` (IDs du Content)
 - **Output** : 
   - `activeId` : ID de la section Content actuellement visible

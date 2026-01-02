@@ -1,5 +1,5 @@
 {
-  "name": "@scrollmark/website",
+  "name": "@scrowl/website",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@fontsource/inter": "^5.0.0",
-    "@scrollmark/scroll-spy": "*",
+    "scrowl": "*",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

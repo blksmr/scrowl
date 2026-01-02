@@ -1,23 +1,21 @@
-# @scrollmark/scroll-spy
+# Scrowl
 
-A ready-to-use React scroll spy hook with automatic overlay detection.
+A React hook for scroll tracking with smooth 60fps performance and smart hysteresis.
 
 ## Installation
 
-This package is part of the scrollmark monorepo. To use it in your project:
-
 ```bash
-npm install @scrollmark/scroll-spy
+npm install Scrowl
 ```
 
 ## Usage
 
 ```tsx
-import { useScrollSpy, ScrollSpyDebugOverlay } from '@scrollmark/scroll-spy';
+import { useScrowl, ScrowlDebugOverlay } from 'Scrowl';
 
 function MyComponent() {
   const sectionIds = ['intro', 'features', 'api'];
-  const { activeId, registerRef, scrollToSection } = useScrollSpy(sectionIds);
+  const { activeId, registerRef, scrollToSection } = useScrowl(sectionIds);
 
   return (
     <>

@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { act } from '@testing-library/react';
-import { useScrollSpy } from '../useScrollSpy';
+import { useScrowl } from '../useScrowl';
 import { useRef } from 'react';
 
-// Test component for integration tests
 function TestComponent({
   sectionIds,
   containerRef,
@@ -12,9 +11,9 @@ function TestComponent({
 }: {
   sectionIds: string[];
   containerRef: ReturnType<typeof useRef<HTMLElement | null>> | null;
-  options?: Parameters<typeof useScrollSpy>[2];
+  options?: Parameters<typeof useScrowl>[2];
 }) {
-  const { activeId, registerRef, scrollToSection } = useScrollSpy(
+  const { activeId, registerRef, scrollToSection } = useScrowl(
     sectionIds,
     containerRef,
     options
@@ -44,9 +43,8 @@ function TestComponent({
   );
 }
 
-describe('useScrollSpy Integration Tests', () => {
+describe('useScrowl Integration Tests', () => {
   beforeEach(() => {
-    // Setup realistic viewport
     Object.defineProperty(window, 'innerHeight', {
       writable: true,
       value: 800,
@@ -71,10 +69,8 @@ describe('useScrollSpy Integration Tests', () => {
 
       render(<TestComponent sectionIds={sections} containerRef={null} />);
 
-      // Initial state
       expect(screen.getByTestId('active-id')).toHaveTextContent('intro');
 
-      // Simulate scrolling down
       act(() => {
         Object.defineProperty(window, 'scrollY', {
           writable: true,
@@ -93,7 +89,6 @@ describe('useScrollSpy Integration Tests', () => {
     });
 
     it('should handle sticky navigation header', async () => {
-      // Create a sticky header
       const header = document.createElement('nav');
       header.style.position = 'sticky';
       header.style.top = '0';
@@ -111,7 +106,6 @@ describe('useScrollSpy Integration Tests', () => {
         />
       );
 
-      // Should detect the sticky header
       await waitFor(
         () => {
           expect(screen.getByTestId('active-id').textContent).toBeTruthy();
@@ -131,7 +125,6 @@ describe('useScrollSpy Integration Tests', () => {
 
       const containerRef = { current: container };
 
-      // Mock container properties
       Object.defineProperty(container, 'scrollTop', {
         writable: true,
         value: 0,
@@ -155,7 +148,6 @@ describe('useScrollSpy Integration Tests', () => {
         />
       );
 
-      // Simulate container scroll
       act(() => {
         Object.defineProperty(container, 'scrollTop', {
           writable: true,
@@ -205,7 +197,6 @@ describe('useScrollSpy Integration Tests', () => {
 
       const initialActiveId = screen.getByTestId('active-id').textContent;
 
-      // Simulate resize
       act(() => {
         Object.defineProperty(window, 'innerHeight', {
           writable: true,
@@ -214,7 +205,6 @@ describe('useScrollSpy Integration Tests', () => {
         window.dispatchEvent(new Event('resize'));
       });
 
-      // Should still work after resize
       await waitFor(
         () => {
           const newActiveId = screen.getByTestId('active-id').textContent;
@@ -244,7 +234,6 @@ describe('useScrollSpy Integration Tests', () => {
 
       render(<TestComponent sectionIds={sections} containerRef={null} />);
 
-      // Mock a very large section
       const section = screen.getByTestId('section-large-section');
       Object.defineProperty(section, 'offsetHeight', {
         writable: true,
@@ -260,4 +249,3 @@ describe('useScrollSpy Integration Tests', () => {
     });
   });
 });
-

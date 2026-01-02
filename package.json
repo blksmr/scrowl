@@ -1,5 +1,5 @@
 {
-  "name": "scrollmark",
+  "name": "Scrowl",
   "private": true,
   "version": "1.0.0",
   "description": "A ready-to-use React scroll spy hook with automatic overlay detection",

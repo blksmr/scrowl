@@ -9,50 +9,45 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: #1b1b1b;
+    --background: #fff;
+    --foreground: #040404;
     
-    --muted: 0 0% 95%;
-    --muted-foreground: oklch(0.6901 0 0);
+    --muted: #fafaf9;
+    --muted-foreground: rgba(4, 4, 4, 0.6);
     
-    --card: 0 0% 98.4%;
-    --card-foreground: #1b1b1b;
+    --card: #ffffff;
+    --card-foreground: #040404;
     
-    --popover: 0 0% 98.4%;
-    --popover-foreground: #1b1b1b;
+    --popover: #ffffff;
+    --popover-foreground: #040404;
     
     --primary: 4 80% 55%;
     --primary-foreground: 4 100% 95%;
     
-    --secondary: 0 0% 95%;
-    --secondary-foreground: #1b1b1b;
+    --secondary: #fafaf9;
+    --secondary-foreground: #040404;
+    --secondary-foreground-hover: oklch(0.30557 0 0);
     
     --accent: 270 50% 55%;
-    --accent-foreground: #1b1b1b;
+    --accent-foreground: #040404;
     
     --destructive: 0 62.8% 50%;
-    --destructive-foreground: #1b1b1b;
+    --destructive-foreground: #040404;
     
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 270 50% 55%;
+    --border: oklch(0 0 0/5%);
+    --input: rgba(0, 0, 0, 0.08);
+    --ring: rgba(0, 0, 0, 0.1);
     
-    --radius: 0.25rem;
+    --radius: 0.5rem;
     
-    --nav-active: #1b1b1b;
-    --nav-hover: 0 0% 92%;
-    --progress-bg: 0 0% 92%;
+    --nav-active: #040404;
+    --nav-hover: rgba(0, 0, 0, 0.04);
+    --progress-bg: rgba(0, 0, 0, 0.04);
     
-    --gradient-hero: linear-gradient(135deg, hsl(270 50% 55%) 0%, hsl(270 60% 65%) 100%);
+    --code-bg: #fafaf9;
+    --code-border: rgba(0, 0, 0, 0.06);
     
-    --sidebar-background: 0 0% 98.4%;
-    --sidebar-foreground: #1b1b1b;
-    --sidebar-primary: 270 50% 55%;
-    --sidebar-primary-foreground: #1b1b1b;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: #1b1b1b;
-    --sidebar-border: 0 0% 88%;
-    --sidebar-ring: 270 50% 55%;
+    --font-mono: 'Geist Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   }
 }
 
@@ -67,43 +62,103 @@
   
   body {
     @apply bg-background antialiased;
-    color: #1b1b1b;
+    color: oklch(0.22213 0 0);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.6;
+  }
+
+  h1, 
+  h2,
+  h3,
+  h4,
+  h5,
+  h6, strong {
+    @apply font-medium;
   }
 }
 
 @layer components {
   .link-hover {
-    @apply underline underline-offset-2 transition-colors duration-200;
-    color: #1b1b1b;
+    @apply underline underline-offset-2 transition-opacity duration-200;
+    color: oklch(0.6901 0 0);
   }
   
   .link-hover:hover {
-    color: #1b1b1b;
+    color: var(--secondary-foreground-hover);
+    transition: color .2s ease;
   }
   
   .section-divider {
-    @apply border-t my-8;
-    border-color: oklch(0.6901 0 0);
+    @apply border-t my-12;
+    border-color: rgba(0, 0, 0, 0.08);
   }
   
   .badge {
-    @apply px-2 py-0.5 bg-primary-foreground rounded-sm text-sm text-primary font-medium;
+    @apply inline-flex px-2 py-0.5 rounded;
+    background: rgba(0, 0, 0, 0.04);
+    font-family: 'Geist Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-size: 13px;
+    color: #040404;
   }
   
-  .code-block {
-    @apply font-mono text-sm px-4 py-3 rounded overflow-x-auto;
-    background-color: oklch(0.6901 0 0);
-    color: #1b1b1b;
+  .shiki {
+    @apply relative w-full py-3 px-4 overflow-x-auto border border-border rounded-lg;
+    background-color: var(--shiki-light-bg);
+
+    /* Line number styles - cannot be done with Tailwind */
+    &[data-line-numbers] {
+      counter-reset: line;
+      .line:before {
+        @apply inline-block mr-4 text-right text-xs leading-[18px];
+        width: 12px;
+        font-family: var(--font-mono);
+        color: color-mix(in srgb, var(--shiki-light) 20%, transparent);
+        content: counter(line);
+        counter-increment: line;
+      }
+    }
+
+    &[data-line-numbers-max-digits="2"] {
+      > [data-line]:before {
+        width: 1.25rem;
+      }
+    }
+
+    &[data-line-numbers-max-digits="3"] {
+      > [data-line]:before {
+        width: 1.75rem;
+      }
+    }
+
+    &[data-line-numbers-max-digits="4"] {
+      > [data-line]:before {
+        width: 2.25rem;
+      }
+    }
+
+    /* Line text styles */
+    .line {
+      span {
+        @apply text-xs leading-[18px];
+        font-family: var(--font-mono);
+        color: var(--shiki-light);
+      }
+    }
   }
-  
-  .code-inline {
-    @apply font-mono text-sm px-1.5 py-0.5 rounded;
-    background-color: oklch(0.6901 0 0);
-    color: #1b1b1b;
-  }
+}
+
+.demo {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 384px;
+  padding: 24px;
+  overflow: hidden;
+  background: var(--background);
+  border: 1px solid var(--border);
+  @apply mb-6;
+  border-radius: 8px;
 }
 
 /* Custom scrollbar - minimal */
@@ -117,15 +172,15 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(0 0% 80%);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(0 0% 70%);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 /* Selection */
 ::selection {
-  background: hsl(270 50% 55% / 0.2);
+  background: rgba(0, 0, 0, 0.1);
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@scrollmark/scroll-spy",
+  "name": "scrowl",
   "version": "1.0.0",
-  "description": "A ready-to-use React scroll spy hook with automatic overlay detection",
+  "description": "A React hook for scroll tracking with smooth 60fps performance and smart hysteresis",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

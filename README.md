@@ -1,4 +1,4 @@
-# scrollmark 📍
+# Scrowl
 
 A lightweight, ready-to-use React hook for scroll spying with automatic overlay detection.
 
@@ -11,13 +11,13 @@ A lightweight, ready-to-use React hook for scroll spying with automatic overlay 
 
 ## Usage
 
-Simply copy the `src/hooks/useScrollSpy.ts` file into your project. That's it! No installation needed.
+Simply copy the `src/hooks/useScrowl.ts` file into your project. That's it! No installation needed.
 
 ```tsx
-import { useScrollSpy } from './hooks/useScrollSpy';
+import { useScrowl } from './hooks/useScrowl';
 
 function TableOfContents() {
-  const { activeId, registerRef } = useScrollSpy([
+  const { activeId, registerRef } = useScrowl([
     'intro',
     'features',
     'api'

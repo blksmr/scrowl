@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@scrollmark/scroll-spy": path.resolve(__dirname, "../packages/scroll-spy/src"),
+      "Scrowl": path.resolve(__dirname, "../packages/Scrowl/src"),
     },
   },
   test: {

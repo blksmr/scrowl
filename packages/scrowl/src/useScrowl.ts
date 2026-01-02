@@ -33,27 +33,27 @@ export type DebugInfo = {
     }>;
 };
 
-export type ScrollSpyOptions = {
+export type ScrowlOptions = {
     offset?: number | 'auto';
     offsetRatio?: number;
     debounceMs?: number;
 };
 
-type ScrollSpyOptionsWithDebug = ScrollSpyOptions & {
+type ScrowlOptionsWithDebug = ScrowlOptions & {
     debug: true;
 };
 
-type ScrollSpyOptionsWithoutDebug = ScrollSpyOptions & {
+type ScrowlOptionsWithoutDebug = ScrowlOptions & {
     debug?: false;
 };
 
-export type UseScrollSpyReturn = {
+export type UseScrowlReturn = {
     activeId: string | null;
     registerRef: (id: string) => (el: HTMLElement | null) => void;
     scrollToSection: (id: string) => void;
 };
 
-export type UseScrollSpyReturnWithDebug = UseScrollSpyReturn & {
+export type UseScrowlReturnWithDebug = UseScrowlReturn & {
     debugInfo: DebugInfo;
 };
 
@@ -75,7 +75,7 @@ const detectTopOverlayHeight = (): number => {
 
         const htmlEl = el as HTMLElement;
 
-        if (htmlEl.id === 'scrollspy-debug-root') continue;
+        if (htmlEl.id === 'scrowl-debug-root') continue;
 
         const style = window.getComputedStyle(el);
         const position = style.position;
@@ -88,7 +88,7 @@ const detectTopOverlayHeight = (): number => {
         let parent = htmlEl.parentElement;
         let isDebugElement = false;
         while (parent && parent !== document.body) {
-            if (parent.id === 'scrollspy-debug-root') {
+            if (parent.id === 'scrowl-debug-root') {
                 isDebugElement = true;
                 break;
             }
@@ -106,23 +106,23 @@ const detectTopOverlayHeight = (): number => {
     return maxBottom;
 };
 
-export function useScrollSpy(
+export function useScrowl(
     sectionIds: string[],
     containerRef?: RefObject<HTMLElement> | null,
-    options?: ScrollSpyOptionsWithDebug
-): UseScrollSpyReturnWithDebug;
+    options?: ScrowlOptionsWithDebug
+): UseScrowlReturnWithDebug;
 
-export function useScrollSpy(
+export function useScrowl(
     sectionIds: string[],
     containerRef?: RefObject<HTMLElement> | null,
-    options?: ScrollSpyOptionsWithoutDebug
-): UseScrollSpyReturn;
+    options?: ScrowlOptionsWithoutDebug
+): UseScrowlReturn;
 
-export function useScrollSpy(
+export function useScrowl(
     sectionIds: string[],
     containerRef: RefObject<HTMLElement> | null = null,
-    options: ScrollSpyOptions & { debug?: boolean } = {}
-): UseScrollSpyReturn | UseScrollSpyReturnWithDebug {
+    options: ScrowlOptions & { debug?: boolean } = {}
+): UseScrowlReturn | UseScrowlReturnWithDebug {
     const { offset = 'auto', offsetRatio = 0.08, debounceMs = 10, debug = false } = options;
 
     const sectionIdsKey = sectionIds.join(',');
@@ -296,18 +296,19 @@ export function useScrollSpy(
 
         const updateDebugInfo = (info: DebugInfo): void => {
             if (debugRef.current) {
+                // Only update if info actually changed to avoid unnecessary re-renders
                 const current = debugInfoRef.current;
-                const hasChanged =
+                const hasChanged = 
                     current.scrollY !== info.scrollY ||
                     current.triggerLine !== info.triggerLine ||
                     current.offsetEffective !== info.offsetEffective ||
                     current.sections.length !== info.sections.length ||
-                    current.sections.some((s, i) =>
-                        s.id !== info.sections[i]?.id ||
+                    current.sections.some((s, i) => 
+                        s.id !== info.sections[i]?.id || 
                         s.isActive !== info.sections[i]?.isActive ||
                         s.score !== info.sections[i]?.score
                     );
-
+                
                 if (hasChanged) {
                     debugInfoRef.current = info;
                     setDebugInfo(info);
@@ -512,4 +513,5 @@ export function useScrollSpy(
     };
 }
 
-export default useScrollSpy;
+export default useScrowl;
+

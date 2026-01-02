@@ -1,9 +1,9 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { RefObject } from 'react';
-import type { DebugInfo } from './useScrollSpy';
+import type { DebugInfo } from './useScrowl';
 
-export type ScrollSpyDebugOverlayProps = {
+export type ScrowlDebugOverlayProps = {
     debugInfo: DebugInfo;
     activeId: string | null;
     containerRef?: RefObject<HTMLElement> | null;
@@ -17,17 +17,17 @@ const COLORS = {
     active: '#4ade80'
 };
 
-export function ScrollSpyDebugOverlay({
+export function ScrowlDebugOverlay({
     debugInfo,
     activeId,
     containerRef
-}: ScrollSpyDebugOverlayProps): React.ReactPortal | null {
+}: ScrowlDebugOverlayProps): React.ReactPortal | null {
     const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
     const sectionRefsMap = useRef<Map<string, HTMLElement>>(new Map());
 
     useEffect(() => {
         const container = document.createElement('div');
-        container.id = 'scrollspy-debug-root';
+        container.id = 'scrowl-debug-root';
         document.body.appendChild(container);
         setPortalContainer(container);
 
@@ -154,7 +154,7 @@ export function ScrollSpyDebugOverlay({
                     }}
                 >
                     <div style={{ fontSize: '11px', color: COLORS.textSecondary }}>
-                        ◇ scrollmark debug
+                        ◇ scrowl debug
                     </div>
                 </div>
 
@@ -265,5 +265,5 @@ export function ScrollSpyDebugOverlay({
     return createPortal(content, portalContainer);
 }
 
-export default ScrollSpyDebugOverlay;
+export default ScrowlDebugOverlay;
 

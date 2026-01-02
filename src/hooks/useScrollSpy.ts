@@ -67,6 +67,9 @@ type SectionScore = {
 };
 
 const detectTopOverlayHeight = (): number => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:69',message:'detectTopOverlayHeight entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     let maxBottom = 0;
     const allElements = document.querySelectorAll('*');
 
@@ -96,6 +99,9 @@ const detectTopOverlayHeight = (): number => {
         }
         if (isDebugElement) continue;
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:99',message:'before getBoundingClientRect in detectTopOverlayHeight',data:{hasId:!!htmlEl.id,id:htmlEl.id||'NO_ID',tagName:el.tagName,nodeType:el.nodeType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         const rect = el.getBoundingClientRect();
 
         if (rect.top >= 0 && rect.top <= 50 && rect.height > 0 && rect.width > 0) {
@@ -211,10 +217,16 @@ export function useScrollSpy(
         if (!element) return;
 
         const container = containerRef?.current;
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:214',message:'before element getBoundingClientRect in scrollToSection',data:{id,hasId:!!element.id,elementId:element.id||'NO_ID'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const elementRect = element.getBoundingClientRect();
         const effectiveOffset = getEffectiveOffset() + 10;
 
         if (container) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:218',message:'before container getBoundingClientRect in scrollToSection',data:{hasId:!!container.id,id:container.id||'NO_ID',tagName:container.tagName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
             const containerRect = container.getBoundingClientRect();
             const relativeTop = elementRect.top - containerRect.top + container.scrollTop;
             container.scrollTo({
@@ -238,14 +250,23 @@ export function useScrollSpy(
     }, [activeId]);
 
     const getSectionBounds = useCallback((): SectionBounds[] => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:240',message:'getSectionBounds entry',data:{hasContainer:!!containerRef?.current,sectionIds:stableSectionIds},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const container = containerRef?.current;
         const scrollTop = container ? container.scrollTop : window.scrollY;
+        // #region agent log
+        if(container){fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:243',message:'before container getBoundingClientRect',data:{hasId:!!container.id,id:container.id||'NO_ID',tagName:container.tagName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});}
+        // #endregion
         const containerTop = container ? container.getBoundingClientRect().top : 0;
 
         return stableSectionIds
             .map((id) => {
                 const el = refs.current[id];
                 if (!el) return null;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.ts:249',message:'before section getBoundingClientRect',data:{id,hasId:!!el.id,elementId:el.id||'NO_ID',tagName:el.tagName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 const rect = el.getBoundingClientRect();
                 const relativeTop = container
                     ? rect.top - containerTop + scrollTop

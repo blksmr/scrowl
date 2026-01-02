@@ -37,25 +37,21 @@ export function ScrollSpyDebugOverlay({
         };
     }, []);
 
-    // Memoize section IDs to avoid unnecessary re-renders
     const sectionIdsString = useMemo(() => {
         return debugInfo.sections.map(s => s.id).sort().join(',');
     }, [debugInfo.sections]);
-    
+
     useEffect(() => {
-        // Only update refs when section IDs actually change
         const sections = debugInfo.sections;
         const currentIds = new Set(sectionRefsMap.current.keys());
         const newIds = new Set(sections.map(s => s.id));
-        
-        // Remove refs for sections that no longer exist
+
         currentIds.forEach(id => {
             if (!newIds.has(id)) {
                 sectionRefsMap.current.delete(id);
             }
         });
-        
-        // Add/update refs for current sections
+
         sections.forEach((section) => {
             const el = document.getElementById(section.id);
             if (el) {
@@ -65,9 +61,8 @@ export function ScrollSpyDebugOverlay({
     }, [sectionIdsString, debugInfo.sections]);
 
     useEffect(() => {
-        // Copy refs to avoid stale closure issues
         const refsMap = sectionRefsMap.current;
-        
+
         refsMap.forEach((el, id) => {
             const isActive = id === activeId;
             if (isActive) {

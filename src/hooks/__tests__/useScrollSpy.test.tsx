@@ -97,8 +97,27 @@ describe('useScrollSpy', () => {
       document.body.appendChild(section2);
 
       // Mock getBoundingClientRect for sections
-      let scrollY = 0;
       mockGetBoundingClientRect.mockImplementation((element: HTMLElement) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.test.tsx:101',message:'mockGetBoundingClientRect called',data:{elementIsUndefined:element===undefined,elementIsNull:element===null,hasId:element?!!element.id:false,id:element?.id||'NO_ID',tagName:element?.tagName||'NO_TAG',scrollY:window.scrollY},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        if (!element || !element.id) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.test.tsx:102',message:'element missing id, returning default',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
+        }
+        const scrollY = window.scrollY;
         if (element.id === 'section1') {
           return {
             top: 0 - scrollY,
@@ -125,7 +144,20 @@ describe('useScrollSpy', () => {
             toJSON: vi.fn(),
           } as DOMRect;
         }
-        return mockGetBoundingClientRect();
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8b56fdb3-6096-4632-a53b-3a0a261ec42b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useScrollSpy.test.tsx:128',message:'fallback to default rect',data:{id:element.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        return {
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        };
       });
 
       const { result } = renderHook(() =>
@@ -148,6 +180,9 @@ describe('useScrollSpy', () => {
         window.dispatchEvent(new Event('scroll'));
       });
 
+      // Wait for requestAnimationFrame and calculation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await waitFor(() => {
         expect(result.current.activeId).toBe('section2');
       }, { timeout: 1000 });
@@ -192,6 +227,19 @@ describe('useScrollSpy', () => {
       });
 
       mockGetBoundingClientRect.mockImplementation((element: HTMLElement) => {
+        if (!element) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
+        }
         if (element === container) {
           return {
             top: 0,
@@ -204,6 +252,19 @@ describe('useScrollSpy', () => {
             y: 0,
             toJSON: vi.fn(),
           } as DOMRect;
+        }
+        if (!element.id) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
         }
         if (element.id === 'section1') {
           return {
@@ -231,7 +292,17 @@ describe('useScrollSpy', () => {
             toJSON: vi.fn(),
           } as DOMRect;
         }
-        return mockGetBoundingClientRect();
+        return {
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        };
       });
 
       const { result } = renderHook(() =>
@@ -269,6 +340,19 @@ describe('useScrollSpy', () => {
       document.body.appendChild(section1);
 
       mockGetBoundingClientRect.mockImplementation((element: HTMLElement) => {
+        if (!element || !element.id) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
+        }
         if (element.id === 'section1') {
           return {
             top: 500,
@@ -282,8 +366,21 @@ describe('useScrollSpy', () => {
             toJSON: vi.fn(),
           } as DOMRect;
         }
-        return mockGetBoundingClientRect();
+        return {
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        };
       });
+      
+      // Reassign to ensure the mock implementation is used
+      Element.prototype.getBoundingClientRect = mockGetBoundingClientRect;
 
       const { result } = renderHook(() =>
         useScrollSpy(['section1'], null, { offset: 100 })
@@ -291,12 +388,23 @@ describe('useScrollSpy', () => {
 
       act(() => {
         result.current.registerRef('section1')(section1);
+      });
+
+      // Ensure window.scrollY is 0 for the test
+      Object.defineProperty(window, 'scrollY', {
+        writable: true,
+        value: 0,
+      });
+
+      act(() => {
         result.current.scrollToSection('section1');
       });
 
       expect(mockScrollTo).toHaveBeenCalled();
       const scrollCall = mockScrollTo.mock.calls[0][0];
-      expect(scrollCall.top).toBeGreaterThan(0);
+      // elementRect.top = 500, window.scrollY = 0, effectiveOffset = 100 + 10 = 110
+      // absoluteTop = 500 + 0 = 500, scrollTo = 500 - 110 = 390
+      expect(scrollCall.top).toBe(390);
 
       document.body.removeChild(section1);
     });
@@ -320,6 +428,19 @@ describe('useScrollSpy', () => {
       });
 
       mockGetBoundingClientRect.mockImplementation((element: HTMLElement) => {
+        if (!element) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
+        }
         if (element === container) {
           return {
             top: 0,
@@ -332,6 +453,19 @@ describe('useScrollSpy', () => {
             y: 0,
             toJSON: vi.fn(),
           } as DOMRect;
+        }
+        if (!element.id) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
         }
         if (element.id === 'section1') {
           return {
@@ -346,8 +480,21 @@ describe('useScrollSpy', () => {
             toJSON: vi.fn(),
           } as DOMRect;
         }
-        return mockGetBoundingClientRect();
+        return {
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        };
       });
+      
+      // Reassign to ensure the mock implementation is used
+      Element.prototype.getBoundingClientRect = mockGetBoundingClientRect;
 
       const { result } = renderHook(() =>
         useScrollSpy(['section1'], containerRef, { offset: 100 })
@@ -355,12 +502,24 @@ describe('useScrollSpy', () => {
 
       act(() => {
         result.current.registerRef('section1')(section1);
+      });
+
+      // Ensure container.scrollTop is 0 for the test
+      Object.defineProperty(container, 'scrollTop', {
+        writable: true,
+        value: 0,
+      });
+
+      act(() => {
         result.current.scrollToSection('section1');
       });
 
       expect(mockScrollTo).toHaveBeenCalled();
       const scrollCall = mockScrollTo.mock.calls[0][0];
-      expect(scrollCall.top).toBeGreaterThan(0);
+      // containerRect.top = 0, elementRect.top = 500, container.scrollTop = 0
+      // relativeTop = 500 - 0 + 0 = 500, effectiveOffset = 100 + 10 = 110
+      // scrollTo = 500 - 110 = 390
+      expect(scrollCall.top).toBe(390);
 
       document.body.removeChild(container);
     });
@@ -398,6 +557,19 @@ describe('useScrollSpy', () => {
       document.body.appendChild(section1);
 
       mockGetBoundingClientRect.mockImplementation((element: HTMLElement) => {
+        if (!element) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
+        }
         if (element === header) {
           return {
             top: 0,
@@ -411,7 +583,17 @@ describe('useScrollSpy', () => {
             toJSON: vi.fn(),
           } as DOMRect;
         }
-        return mockGetBoundingClientRect();
+        return {
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        };
       });
 
       const { result } = renderHook(() =>
@@ -500,6 +682,19 @@ describe('useScrollSpy', () => {
       });
 
       mockGetBoundingClientRect.mockImplementation((element: HTMLElement) => {
+        if (!element || !element.id) {
+          return {
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: vi.fn(),
+          };
+        }
         if (element.id === 'section1') {
           return {
             top: -950,
@@ -526,7 +721,17 @@ describe('useScrollSpy', () => {
             toJSON: vi.fn(),
           } as DOMRect;
         }
-        return mockGetBoundingClientRect();
+        return {
+          top: 0,
+          left: 0,
+          bottom: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        };
       });
 
       const { result } = renderHook(() =>

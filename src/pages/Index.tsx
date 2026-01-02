@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { highlightElement } from "@speed-highlight/core";
 
 const SECTIONS = [
@@ -138,23 +139,32 @@ const LINKS = [
   { label: "Examples", href: "#" },
 ];
 
-// Hook source code - loaded dynamically
 let HOOK_SOURCE_CODE_CACHE: string | null = null;
+let OVERLAY_SOURCE_CODE_CACHE: string | null = null;
 
 const loadHookSource = async (): Promise<string> => {
   if (HOOK_SOURCE_CODE_CACHE) return HOOK_SOURCE_CODE_CACHE;
-  
+
   try {
     const response = await fetch('/useScrollSpy.ts');
     const text = await response.text();
     HOOK_SOURCE_CODE_CACHE = text;
     return text;
   } catch {
-    // Fallback message if fetch fails
-    return `// useScrollSpy hook
-// Unable to load source code
-// Please visit the GitHub repo to get the complete source code
-`;
+    return `// useScrollSpy hook - Unable to load source code`;
+  }
+};
+
+const loadOverlaySource = async (): Promise<string> => {
+  if (OVERLAY_SOURCE_CODE_CACHE) return OVERLAY_SOURCE_CODE_CACHE;
+
+  try {
+    const response = await fetch('/ScrollSpyDebugOverlay.tsx');
+    const text = await response.text();
+    OVERLAY_SOURCE_CODE_CACHE = text;
+    return text;
+  } catch {
+    return `// ScrollSpyDebugOverlay - Unable to load source code`;
   }
 };
 
@@ -162,19 +172,28 @@ const Index = () => {
   const [debugMode, setDebugMode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hookSourceCode, setHookSourceCode] = useState<string>("");
+  const [overlaySourceCode, setOverlaySourceCode] = useState<string>("");
   const [isLoadingHook, setIsLoadingHook] = useState(false);
+  const [isLoadingOverlay, setIsLoadingOverlay] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("hook");
   const codeRef = useRef<HTMLElement>(null);
+  const overlayCodeRef = useRef<HTMLElement>(null);
   
-  // Callback ref to highlight when element is mounted
   const codeRefCallback = (node: HTMLElement | null) => {
     if (node) {
       codeRef.current = node;
-      // Highlight immediately when element is mounted
       if (hookSourceCode && isModalOpen) {
-        setTimeout(() => {
-          highlightElement(node, 'ts');
-        }, 0);
+        setTimeout(() => highlightElement(node, 'ts'), 0);
+      }
+    }
+  };
+
+  const overlayCodeRefCallback = (node: HTMLElement | null) => {
+    if (node) {
+      overlayCodeRef.current = node;
+      if (overlaySourceCode && isModalOpen) {
+        setTimeout(() => highlightElement(node, 'ts'), 0);
       }
     }
   };
@@ -195,18 +214,23 @@ const Index = () => {
     scrollToSection(sectionId);
   };
 
-  // Highlight code when hookSourceCode changes or modal opens
   useLayoutEffect(() => {
-    if (hookSourceCode && codeRef.current && isModalOpen) {
-      // Use requestAnimationFrame to ensure DOM is ready
+    if (hookSourceCode && codeRef.current && isModalOpen && activeTab === "hook") {
       const rafId = requestAnimationFrame(() => {
-        if (codeRef.current) {
-          highlightElement(codeRef.current, 'ts');
-        }
+        if (codeRef.current) highlightElement(codeRef.current, 'ts');
       });
       return () => cancelAnimationFrame(rafId);
     }
-  }, [hookSourceCode, isModalOpen]);
+  }, [hookSourceCode, isModalOpen, activeTab]);
+
+  useLayoutEffect(() => {
+    if (overlaySourceCode && overlayCodeRef.current && isModalOpen && activeTab === "overlay") {
+      const rafId = requestAnimationFrame(() => {
+        if (overlayCodeRef.current) highlightElement(overlayCodeRef.current, 'ts');
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [overlaySourceCode, isModalOpen, activeTab]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -337,7 +361,7 @@ const Index = () => {
                     </a>
                   )}
                   {feature.badge && (
-                    <span className={`badge ${feature.title === "Debug Mode" && debugMode ? "bg-[#7c3aed] text-white" : ""}`}>
+                    <span className={`badge ${feature.title === "Debug Mode" && debugMode ? "bg-primary text-primary-foreground" : ""}`}>
                       {feature.title === "Debug Mode" && debugMode ? "Active" : feature.badge}
                     </span>
                   )}
@@ -388,55 +412,94 @@ const Index = () => {
                   <ArrowUpRight className="w-3 h-3" />
                 </button>
               </DialogTrigger>
-              <DialogContent className="max-w-5xl h-[90vh] gap-1 flex flex-col p-0">
-                <DialogHeader className="space-y-0 px-6 pt-6 pb-4 border-b border-border flex-shrink-0 flex flex-row items-center justify-between">
-                  <div>
-                    <DialogTitle className="text-lg">useScrollSpy.ts</DialogTitle>
-                    <DialogDescription className="text-sm text-[#7c7c7c]">
-                      Copy this hook into your project's hooks folder
-                    </DialogDescription>
-                  </div>
-                  {hookSourceCode && (
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(hookSourceCode);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      className="p-2.5 bg-background border border-border rounded-md hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2 text-sm"
-                      title="Copy code"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="w-4 h-4 text-[#059669]" />
-                          <span className="text-xs text-[#059669]">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          <span className="text-xs">Copy</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </DialogHeader>
-                <div className="flex-1 min-h-0 p-2 pt-0">
-                  {isLoadingHook ? (
-                    <div className="flex items-center justify-center h-full text-[#7c7c7c]">
-                      Loading...
+              <DialogContent className="max-w-5xl h-[90vh] gap-0 flex flex-col p-0">
+                <Tabs value={activeTab} onValueChange={async (value) => {
+                  setActiveTab(value);
+                  if (value === "overlay" && !overlaySourceCode && !isLoadingOverlay) {
+                    setIsLoadingOverlay(true);
+                    const code = await loadOverlaySource();
+                    setOverlaySourceCode(code);
+                    setIsLoadingOverlay(false);
+                  }
+                }} className="flex flex-col h-full">
+                  <DialogHeader className="space-y-0 px-6 pt-6 pb-0 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <DialogTitle className="text-lg">Source Files</DialogTitle>
+                        <DialogDescription className="text-sm text-[#7c7c7c]">
+                          Copy these files into your project's hooks folder
+                        </DialogDescription>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const code = activeTab === "hook" ? hookSourceCode : overlaySourceCode;
+                          if (code) {
+                            navigator.clipboard.writeText(code);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }
+                        }}
+                        className="p-2.5 bg-background border border-border rounded-md hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2 text-sm"
+                        title="Copy code"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-4 h-4 text-[#059669]" />
+                            <span className="text-xs text-[#059669]">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span className="text-xs">Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                  ) : hookSourceCode ? (
-                    <div className="h-full overflow-y-auto">
-                      <pre>
-                        <code ref={codeRefCallback} className="shj-lang-ts block whitespace-pre font-mono text-sm" style={{ fontSize: '14px' }}>{hookSourceCode}</code>
-                      </pre>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-[#7c7c7c]">
-                      Click "View hook" to load the source code
-                    </div>
-                  )}
-                </div>
+                    <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent p-0 h-auto">
+                      <TabsTrigger
+                        value="hook"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 text-sm"
+                      >
+                        useScrollSpy.ts
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="overlay"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 text-sm"
+                      >
+                        ScrollSpyDebugOverlay.tsx
+                        <span className="ml-2 text-[10px] text-[#9d9d9d]">(optional)</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </DialogHeader>
+
+                  <TabsContent value="hook" className="flex-1 min-h-0 m-0 p-2 data-[state=inactive]:hidden">
+                    {isLoadingHook ? (
+                      <div className="flex items-center justify-center h-full text-[#7c7c7c]">Loading...</div>
+                    ) : hookSourceCode ? (
+                      <div className="h-full overflow-y-auto">
+                        <pre>
+                          <code ref={codeRefCallback} className="shj-lang-ts block whitespace-pre font-mono text-sm" style={{ fontSize: '14px' }}>{hookSourceCode}</code>
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-[#7c7c7c]">Loading...</div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="overlay" className="flex-1 min-h-0 m-0 p-2 data-[state=inactive]:hidden">
+                    {isLoadingOverlay ? (
+                      <div className="flex items-center justify-center h-full text-[#7c7c7c]">Loading...</div>
+                    ) : overlaySourceCode ? (
+                      <div className="h-full overflow-y-auto">
+                        <pre>
+                          <code ref={overlayCodeRefCallback} className="shj-lang-ts block whitespace-pre font-mono text-sm" style={{ fontSize: '14px' }}>{overlaySourceCode}</code>
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-[#7c7c7c]">Click to load the overlay component</div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </DialogContent>
             </Dialog>
           </div>

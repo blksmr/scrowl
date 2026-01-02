@@ -145,7 +145,7 @@ export function useScrollSpy(
     });
 
     const refs = useRef<Record<string, HTMLElement | null>>({});
-    const activeIdRef = useRef<string | null>(sectionIds[0] || null);
+    const activeIdRef = useRef<string | null>(stableSectionIds[0] || null);
     const lastScrollY = useRef<number>(0);
     const lastActiveScore = useRef<number>(0);
     const rafId = useRef<number | null>(null);

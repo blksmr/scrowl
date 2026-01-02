@@ -1,0 +1,654 @@
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
+import { useScrollSpy, ScrollSpyDebugOverlay } from "@scrollmark/scroll-spy";
+import { ArrowUpRight, Copy, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getHighlighter } from "shiki";
+
+const SECTIONS = [
+  { id: "intro", label: "Intro" },
+  { id: "features", label: "Features" },
+  { id: "getting-started", label: "Getting Started" },
+  { id: "api", label: "API" },
+];
+
+const FEATURES = [
+  {
+    title: "Auto Overlay Detection",
+    description: "Automatically detects sticky/fixed headers and adjusts scroll offset. No manual config needed.",
+    badge: "New",
+    href: "#",
+  },
+  {
+    title: "Buttery Smooth",
+    description: "RAF + throttling for 60fps performance. No jank, no polling, just smooth.",
+    badge: null,
+    href: "#",
+  },
+  {
+    title: "Hysteresis Scoring",
+    description: "Smart algorithm prevents jittery switching between sections while scrolling.",
+    badge: null,
+    href: "#",
+  },
+  {
+    title: "Window & Container",
+    description: "Works with both window scroll and custom scrollable containers.",
+    badge: null,
+    href: "#",
+  },
+  {
+    title: "Debug Mode",
+    description: "Visual overlay showing scroll position, trigger line, and section scores.",
+    badge: "Dev",
+    href: "#",
+  },
+  {
+    title: "TypeScript Ready",
+    description: "Full type definitions included. Autocomplete everything.",
+    badge: null,
+    href: "#",
+  },
+  {
+    title: "Copy & Use",
+    description: "No installation, no bundling. Just copy the hook file into your project and use it.",
+    badge: null,
+    href: "#",
+  },
+];
+
+const API_ARGUMENTS = [
+  {
+    name: "sectionIds",
+    type: "string[]",
+    description: "Array of section IDs to track.",
+  },
+  {
+    name: "containerRef",
+    type: "RefObject<HTMLElement> | null",
+    description: "Optional scrollable container. Defaults to window.",
+  },
+  {
+    name: "options",
+    type: "ScrollSpyOptions",
+    description: "Configuration options (see below).",
+  },
+];
+
+const API_OPTIONS = [
+  {
+    name: "offset",
+    type: "number | 'auto'",
+    default: "'auto'",
+    description: "Trigger offset from top. 'auto' detects sticky/fixed headers.",
+  },
+  {
+    name: "offsetRatio",
+    type: "number",
+    default: "0.08",
+    description: "Viewport ratio for trigger line calculation.",
+  },
+  {
+    name: "debounceMs",
+    type: "number",
+    default: "10",
+    description: "Throttle delay in milliseconds.",
+  },
+  {
+    name: "debug",
+    type: "boolean",
+    default: "false",
+    description: "Enables debug mode with debugInfo in return value.",
+  },
+];
+
+const API_RETURNS = [
+  {
+    name: "activeId",
+    type: "string | null",
+    description: "The ID of the currently active section.",
+  },
+  {
+    name: "registerRef(id)",
+    type: "(el: HTMLElement | null) => void",
+    description: "Ref callback to attach to each section element.",
+  },
+  {
+    name: "scrollToSection(id)",
+    type: "(id: string) => void",
+    description: "Programmatically scroll to a specific section.",
+  },
+  {
+    name: "debugInfo",
+    type: "DebugInfo",
+    description: "Debug data (only when debug: true).",
+  },
+];
+
+const LINKS = [
+  { label: "GitHub", href: "https://github.com/blksmr/scrollmark" },
+  { label: "Copy Hook", href: "#getting-started" },
+  { label: "Examples", href: "#" },
+];
+
+let HOOK_SOURCE_CODE_CACHE: string | null = null;
+let OVERLAY_SOURCE_CODE_CACHE: string | null = null;
+
+const loadHookSource = async (): Promise<string> => {
+  if (HOOK_SOURCE_CODE_CACHE) return HOOK_SOURCE_CODE_CACHE;
+
+  try {
+    const response = await fetch('/useScrollSpy.ts');
+    const text = await response.text();
+    HOOK_SOURCE_CODE_CACHE = text;
+    return text;
+  } catch {
+    return `// useScrollSpy hook - Unable to load source code`;
+  }
+};
+
+const loadOverlaySource = async (): Promise<string> => {
+  if (OVERLAY_SOURCE_CODE_CACHE) return OVERLAY_SOURCE_CODE_CACHE;
+
+  try {
+    const response = await fetch('/ScrollSpyDebugOverlay.tsx');
+    const text = await response.text();
+    OVERLAY_SOURCE_CODE_CACHE = text;
+    return text;
+  } catch {
+    return `// ScrollSpyDebugOverlay - Unable to load source code`;
+  }
+};
+
+const Index = () => {
+  const [debugMode, setDebugMode] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [hookSourceCode, setHookSourceCode] = useState<string>("");
+  const [overlaySourceCode, setOverlaySourceCode] = useState<string>("");
+  const [hookHighlightedHtml, setHookHighlightedHtml] = useState<string>("");
+  const [overlayHighlightedHtml, setOverlayHighlightedHtml] = useState<string>("");
+  const [isLoadingHook, setIsLoadingHook] = useState(false);
+  const [isLoadingOverlay, setIsLoadingOverlay] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("hook");
+  const highlighterRef = useRef<Awaited<ReturnType<typeof getHighlighter>> | null>(null);
+  
+  // Initialize Shiki highlighter
+  useEffect(() => {
+    getHighlighter({
+      themes: ['github-light', 'github-dark'],
+      langs: ['typescript', 'tsx'],
+    }).then((highlighter) => {
+      highlighterRef.current = highlighter;
+    });
+  }, []);
+
+  // Highlight hook source code
+  useEffect(() => {
+    if (hookSourceCode && highlighterRef.current) {
+      const html = highlighterRef.current.codeToHtml(hookSourceCode, {
+        lang: 'typescript',
+        theme: 'github-light',
+      });
+      setHookHighlightedHtml(html);
+    }
+  }, [hookSourceCode]);
+
+  // Highlight overlay source code
+  useEffect(() => {
+    if (overlaySourceCode && highlighterRef.current) {
+      const html = highlighterRef.current.codeToHtml(overlaySourceCode, {
+        lang: 'typescript',
+        theme: 'github-light',
+      });
+      setOverlayHighlightedHtml(html);
+    }
+  }, [overlaySourceCode]);
+  
+  const showDebug = debugMode && !isModalOpen;
+
+  const scrollSpyResult = useScrollSpy(
+    SECTIONS.map((s) => s.id),
+    null,
+    showDebug ? { debug: true } : {}
+  );
+
+  const { activeId, registerRef, scrollToSection } = scrollSpyResult;
+  const debugInfo = showDebug ? scrollSpyResult.debugInfo : null;
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    scrollToSection(sectionId);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Scroll Progress Indicator - Right Side - Horizontal lines stacked vertically */}
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col items-end">
+        {SECTIONS.map((section) => (
+          <a
+            key={section.id}
+            href={`#${section.id}`}
+            onClick={(e) => handleNavClick(e, section.id)}
+            className="group flex items-center gap-3"
+            title={section.label}
+          >
+            <span 
+              className={`text-[10px] transition-opacity duration-200 ${
+                activeId === section.id 
+                  ? "opacity-100 text-foreground" 
+                  : "opacity-0 group-hover:opacity-100"
+              }`}
+            >
+              {section.label}
+            </span>
+            <div
+              className={`h-[2px] rounded-full transition-all duration-300 ${
+                activeId === section.id
+                  ? "w-6 bg-primary"
+                  : "w-4 group-hover:w-6"
+              }`}
+              style={{ backgroundColor: activeId === section.id ? undefined : 'oklch(0.6901 0 0)' }}
+            />
+          </a>
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <main className="max-w-[640px] mx-auto py-32">
+        
+        {/* Header */}
+        <header className="mb-12">
+          <div className="text-2xl mb-4">📍</div>
+          <h1 className="text-foreground text-xl font-medium mb-2">
+            scrollmark
+          </h1>
+          <p className=" text-sm">
+            The scroll spy hook for React.
+          </p>
+        </header>
+
+
+        {/* Intro Section */}
+        <section
+          id="intro"
+          ref={registerRef("intro")}
+          className="mb-10"
+        >
+          <p className=" leading-relaxed">
+            <span className="text-foreground font-medium">scrollmark</span> is a 
+            ready-to-use React hook that tracks which section of your page is currently 
+            visible. Just copy the hook into your project—no installation needed. Perfect 
+            for documentation sites, landing pages, and anywhere you need a table of contents 
+            that updates as you scroll.
+          </p>
+          <p className=" leading-relaxed mt-4 text-sm">
+            Built with RAF + throttling for buttery-smooth 60fps performance. 
+            Smart hysteresis prevents jittery section switching. Your users will thank you. ⚡
+          </p>
+        </section>
+
+        <div className="section-divider" />
+
+        {/* Features Section */}
+        <section
+          id="features"
+          ref={registerRef("features")}
+          className="mb-10"
+        >
+          <h2 className="text-foreground font-medium mb-6">
+            Features
+          </h2>
+          
+          <ul className="space-y-5">
+            {FEATURES.map((feature) => (
+              <li key={feature.title}>
+                <div className="flex items-center space-x-2">
+                  {feature.title === "Debug Mode" ? (
+                    <button
+                      onClick={() => setDebugMode(!debugMode)}
+                      className={`text-foreground link-hover inline-flex items-center gap-1 transition-colors ${
+                        ""
+                      }`}
+                    >
+                      {feature.title}
+                      {debugMode ? " ✓" : ""}
+                      <ArrowUpRight className="w-3 h-3" />
+                    </button>
+                  ) : (
+                    <a 
+                      href={feature.href}
+                      className="text-foreground link-hover inline-flex items-center gap-1"
+                    >
+                      {feature.title}
+                      <ArrowUpRight className="w-3 h-3" />
+                    </a>
+                  )}
+                  {feature.badge && (
+                    <span className={`badge ${feature.title === "Debug Mode" && debugMode ? "bg-primary text-primary-foreground" : ""}`}>
+                      {feature.title === "Debug Mode" && debugMode ? "Active" : feature.badge}
+                    </span>
+                  )}
+                </div>
+                <p className=" text-sm mt-1">
+                  {feature.description}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <div className="section-divider" />
+
+        {/* Getting Started Section */}
+        <section
+          id="getting-started"
+          ref={registerRef("getting-started")}
+          className="mb-10"
+        >
+          <h2 className="text-foreground font-medium mb-6">
+            Getting Started
+          </h2>
+          
+          <div className="flex items-center gap-3 mb-4">
+            <p className=" text-sm">
+              Copy the hook into your project:
+            </p>
+            <Dialog open={isModalOpen} onOpenChange={(open) => {
+              setIsModalOpen(open);
+              if (open) {
+                setDebugMode(false);
+              }
+            }}>
+              <DialogTrigger asChild>
+                <button 
+                  className="text-xs px-3 py-1.5 hover:bg-muted rounded-full transition-colors inline-flex items-center gap-1.5"
+                  onClick={async () => {
+                    if (!hookSourceCode && !isLoadingHook) {
+                      setIsLoadingHook(true);
+                      const code = await loadHookSource();
+                      setHookSourceCode(code);
+                      setIsLoadingHook(false);
+                    }
+                  }}
+                >
+                  View hook
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl h-[90vh] gap-0 flex flex-col p-0">
+                <Tabs value={activeTab} onValueChange={async (value) => {
+                  setActiveTab(value);
+                  if (value === "overlay" && !overlaySourceCode && !isLoadingOverlay) {
+                    setIsLoadingOverlay(true);
+                    const code = await loadOverlaySource();
+                    setOverlaySourceCode(code);
+                    setIsLoadingOverlay(false);
+                  }
+                }} className="flex flex-col h-full">
+                  <DialogHeader className="space-y-0 px-6 pt-6 pb-0 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <DialogTitle className="text-lg">Source Files</DialogTitle>
+                        <DialogDescription className="text-sm ">
+                          Copy these files into your project's hooks folder
+                        </DialogDescription>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const code = activeTab === "hook" ? hookSourceCode : overlaySourceCode;
+                          if (code) {
+                            navigator.clipboard.writeText(code);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }
+                        }}
+                        className="p-2.5 bg-background border border-border rounded-md hover:bg-muted transition-colors shadow-sm flex items-center gap-2 text-sm"
+                        title="Copy code"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span className="text-xs">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span className="text-xs">Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent p-0 h-auto">
+                      <TabsTrigger
+                        value="hook"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 text-sm"
+                      >
+                        useScrollSpy.ts
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="overlay"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2 text-sm"
+                      >
+                        ScrollSpyDebugOverlay.tsx
+                        <span className="ml-2 text-[10px] ">(optional)</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </DialogHeader>
+
+                  <TabsContent value="hook" className="flex-1 min-h-0 m-0 p-2 data-[state=inactive]:hidden">
+                    {isLoadingHook ? (
+                      <div className="flex items-center justify-center h-full ">Loading...</div>
+                    ) : hookHighlightedHtml ? (
+                      <div className="h-full overflow-y-auto">
+                        <div 
+                          className="font-mono text-sm"
+                          style={{ fontSize: '14px' }}
+                          dangerouslySetInnerHTML={{ __html: hookHighlightedHtml }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full ">Loading...</div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="overlay" className="flex-1 min-h-0 m-0 p-2 data-[state=inactive]:hidden">
+                    {isLoadingOverlay ? (
+                      <div className="flex items-center justify-center h-full ">Loading...</div>
+                    ) : overlayHighlightedHtml ? (
+                      <div className="h-full overflow-y-auto">
+                        <div 
+                          className="font-mono text-sm"
+                          style={{ fontSize: '14px' }}
+                          dangerouslySetInnerHTML={{ __html: overlayHighlightedHtml }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full ">Click to load the overlay component</div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          <pre className="code-block mb-6">
+            <code>
+              <span># Install the package</span>{"\n"}
+              <span>npm install @scrollmark/scroll-spy</span>{"\n"}
+            </code>
+          </pre>
+          
+          <p className=" text-sm mb-4">
+            Basic usage ↓
+          </p>
+          
+          <pre className="code-block">
+            <code>
+              <span>import</span> {"{"} useScrollSpy {"}"} <span>from</span> <span>'@scrollmark/scroll-spy'</span>{"\n\n"}
+              <span>function</span> <span>TableOfContents</span>() {"{"}{"\n"}
+              {"  "}<span>const</span> {"{"} activeId, registerRef, scrollToSection {"}"} = <span>useScrollSpy</span>([{"\n"}
+              {"    "}<span>'intro'</span>,{"\n"}
+              {"    "}<span>'features'</span>,{"\n"}
+              {"    "}<span>'api'</span>{"\n"}
+              {"  "}]){"\n\n"}
+              {"  "}<span>return</span> ({"\n"}
+              {"    "}<span>{"<>"}</span>{"\n"}
+              {"      "}<span>{"<nav>"}</span>{"\n"}
+              {"        "}<span>{"<button"}</span> <span>onClick</span>={"{"}() {"=>"} scrollToSection(<span>'intro'</span>){"}"}<span>{">"}</span>Intro<span>{"</button>"}</span>{"\n"}
+              {"        "}<span>{"<button"}</span> <span>onClick</span>={"{"}() {"=>"} scrollToSection(<span>'features'</span>){"}"}<span>{">"}</span>Features<span>{"</button>"}</span>{"\n"}
+              {"      "}<span>{"</nav>"}</span>{"\n"}
+              {"      "}{"\n"}
+              {"      "}<span>{"<section"}</span> <span>id</span>=<span>"intro"</span> <span>ref</span>={"{"}registerRef(<span>'intro'</span>){"}"}<span>{">"}</span>{"\n"}
+              {"        "}...{"\n"}
+              {"      "}<span>{"</section>"}</span>{"\n"}
+              {"    "}<span>{"</>"}</span>{"\n"}
+              {"  "}){"\n"}
+              {"}"}
+            </code>
+          </pre>
+        </section>
+
+        <div className="section-divider" />
+
+        {/* API Section */}
+        <section
+          id="api"
+          ref={registerRef("api")}
+          className="mb-10"
+        >
+          <h2 className="text-foreground font-medium mb-6">
+            API
+          </h2>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-foreground text-sm font-medium mb-3">Arguments</h3>
+              <ul className="space-y-3">
+                {API_ARGUMENTS.map((item) => (
+                  <li key={item.name}>
+                    <div className="flex items-baseline gap-2">
+                      <code className="code-inline text-foreground">{item.name}</code>
+                      <span className=" text-xs">{item.type}</span>
+                    </div>
+                    <p className=" text-sm mt-1">{item.description}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="section-divider" />
+
+            <div>
+              <h3 className="text-foreground text-sm font-medium mb-3">Options</h3>
+              <ul className="space-y-3">
+                {API_OPTIONS.map((item) => (
+                  <li key={item.name}>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <code className="code-inline text-foreground">{item.name}</code>
+                      <span className=" text-xs">{item.type}</span>
+                      <span className=" text-xs">= {item.default}</span>
+                    </div>
+                    <p className=" text-sm mt-1">{item.description}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="section-divider" />
+
+            <div>
+              <h3 className="text-foreground text-sm font-medium mb-3">Returns</h3>
+              <ul className="space-y-3">
+                {API_RETURNS.map((item) => (
+                  <li key={item.name}>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <code className="code-inline text-foreground">{item.name}</code>
+                      <span className=" text-xs">{item.type}</span>
+                    </div>
+                    <p className=" text-sm mt-1">{item.description}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <div className="section-divider" />
+
+        {/* Footer Links */}
+        <footer className="mb-10">
+          <ul className="space-y-2">
+            {LINKS.map((link) => (
+              <li key={link.label}>
+                <a 
+                  href={link.href}
+                  className=" link-hover text-sm inline-flex items-center gap-1"
+                  {...(link.label !== "Copy Hook" && { target: "_blank", rel: "noopener noreferrer" })}
+                >
+                  {link.label}
+                  {link.label !== "Copy Hook" && <ArrowUpRight className="w-3 h-3" />}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </footer>
+
+        <div className="section-divider" />
+
+        {/* Copyright */}
+        <div className=" text-xs">
+          <p>© 2026 scrollmark</p>
+          <p className="mt-1">
+            Made with ☕ by{" "}
+            <a href="https://x.com/blkasmir" className="link-hover">
+              @blksmr
+            </a>
+          </p>
+          <p className="mt-3">
+            ᕙ(⇀‸↼‶)ᕗ
+          </p>
+        </div>
+      </main>
+
+      {showDebug && debugInfo && (
+        <ScrollSpyDebugOverlay
+          debugInfo={debugInfo}
+          activeId={activeId}
+        />
+      )}
+
+      {/* Bottom Navigation Overlay */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-6 pointer-events-none">
+        <nav className="p-2 bg-background/80 backdrop-blur-sm border border-border rounded-full shadow-lg pointer-events-auto">
+          <ul className="flex gap-2 text-sm">
+            {SECTIONS.map((section) => (
+              <li key={section.id}>
+                <a
+                  href={`#${section.id}`}
+                  onClick={(e) => handleNavClick(e, section.id)}
+                  className={`px-3 py-1 rounded-full transition-all duration-200 ${
+                    activeId === section.id
+                      ? "bg-black text-white"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  {section.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  );
+};
+
+export default Index;

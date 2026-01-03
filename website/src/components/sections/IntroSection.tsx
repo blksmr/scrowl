@@ -14,8 +14,6 @@ export function IntroSection() {
         <a
           href="https://github.com/blksmr/scrowl"
           className="link-hover"
-          target="_blank"
-          rel="noopener noreferrer"
         >GitHub</a>
       </p>
     </section>

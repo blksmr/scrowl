@@ -43,6 +43,9 @@ export const createBaseMetadata = ({
     keywords: KEYWORDS,
     authors: [{ name: "Scrowl" }],
     creator: "Scrowl",
+    icons: {
+      icon: "/favicon.png",
+    },
     openGraph: {
       type: "website",
       locale: "en_US",

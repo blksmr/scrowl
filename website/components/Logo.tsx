@@ -1,25 +1,46 @@
-import { type ComponentProps } from "react";
+import React, { SVGProps } from "react";
 
-interface LogoProps extends Omit<ComponentProps<"svg">, "width" | "height"> {
+type IconProps = SVGProps<SVGSVGElement> & {
+  secondaryfill?: string;
+  strokewidth?: number;
+  title?: string;
+};
+
+interface LogoProps extends Omit<IconProps, "width" | "height"> {
   size?: number | string;
 }
 
-export function Logo({ className, size = 16, ...props }: LogoProps) {
+export function Logo({
+  fill = "currentColor",
+  secondaryfill,
+  size = 20,
+  className,
+  ...props
+}: LogoProps) {
+  secondaryfill = secondaryfill || fill;
+  const sizeValue = typeof size === "number" ? `${size}px` : size;
+
   return (
     <svg
+      height={sizeValue}
+      width={sizeValue}
+      viewBox="0 0 20 20"
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 18 18"
       className={className}
-      width={size}
-      height={size}
       aria-label="Scrowl logo"
-      fill="currentColor"
       {...props}
     >
-      <g fill="currentColor">
-        <rect x="1" y="5" width="16" height="8" rx="2.75" ry="2.75" />
-        <path d="M14.25,15H3.75c-.414,0-.75,.336-.75,.75s.336,.75,.75,.75H14.25c.414,0,.75-.336,.75-.75s-.336-.75-.75-.75Z" />
-        <path d="M3.75,3H14.25c.414,0,.75-.336,.75-.75s-.336-.75-.75-.75H3.75c-.414,0-.75,.336-.75,.75s.336,.75,.75,.75Z" />
+      <g fill={fill}>
+        <circle
+          cx="10"
+          cy="10"
+          fill={fill}
+          r="7"
+          stroke={fill}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        />
       </g>
     </svg>
   );

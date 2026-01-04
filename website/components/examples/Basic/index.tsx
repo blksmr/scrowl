@@ -19,7 +19,6 @@ export function Basic() {
   });
 
   const { getIndicatorStyle } = useNavProgress(SECTION_IDS, debugInfo);
-  console.log(debugInfo);
 
   return (
     <div className="relative min-h-screen bg-white">
@@ -47,17 +46,13 @@ export function Basic() {
             style={{ minHeight: "100vh" }}
           >
             <div
-              className="relative w-full max-w-[430px] overflow-hidden rounded-lg"
-              style={{ aspectRatio: "3/2" }}
+              className="relative pointer-events-none select-none w-full max-w-[430px] overflow-hidden rounded-lg aspect-[3/2]"
             >
-              <figure
-              className="absolute inset-0"
-              style={{ backgroundColor: color }}
-              >
-              <img src={`/images/${id}.jpg`} alt={label} className="absolute w-full h-full left-0 right-0 top-0 bottom-0 inset-0 object-cover" />
-            </figure>
+              <div className="absolute inset-0" style={{ backgroundColor: color }}>
+                <img src={`/images/${id}.jpg`} alt={label} className="absolute w-full h-full left-0 right-0 top-0 bottom-0 inset-0 object-cover" />
+              </div>
             </div>
-            <figcaption className="text-black/30 text-[10px] font-mono">{caption}</figcaption>
+            <span className="text-black/30 text-[10px] font-mono">{caption}</span>
           </section>
         ))}
       </main>

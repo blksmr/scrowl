@@ -24,6 +24,7 @@ export default {
       },
       colors: {
         border: "var(--border)",
+        primary: "var(--primary)",
         input: "var(--input)",
         ring: "var(--ring)",
         background: "var(--background)",

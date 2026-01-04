@@ -10,6 +10,7 @@ import type { RefObject } from 'react';
 
 const VISIBILITY_THRESHOLD = 0.6;
 const HYSTERESIS_SCORE_MARGIN = 150;
+const SCROLL_IDLE_MS = 100;
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 type SectionBounds = {
@@ -76,45 +77,44 @@ type SectionScore = {
     id: string;
     score: number;
     visibilityRatio: number;
-    distanceFromTrigger: number;
     isInViewport: boolean;
     bounds: SectionBounds;
 };
 
+const OVERLAY_SELECTORS = 'header, nav, [role="banner"], [data-sticky], .sticky, .fixed, .fixed-header, .fixed-top, .navbar, .topbar, .app-bar';
+
+const isValidOverlay = (el: Element): boolean => {
+    if (el === document.documentElement || el === document.body) return false;
+
+    const htmlEl = el as HTMLElement;
+    if (htmlEl.id === 'scrowl-debug-root') return false;
+    if (htmlEl.closest('#scrowl-debug-root')) return false;
+
+    const style = window.getComputedStyle(el);
+    if (style.position !== 'fixed' && style.position !== 'sticky') return false;
+
+    const zIndex = parseInt(style.zIndex, 10);
+    if (!isNaN(zIndex) && zIndex >= 9998) return false;
+
+    const rect = el.getBoundingClientRect();
+    return rect.top >= 0 && rect.top <= 50 && rect.height > 0 && rect.width > 0;
+};
+
 const detectTopOverlayHeight = (): number => {
     let maxBottom = 0;
-    const allElements = document.querySelectorAll('*');
 
-    for (const el of allElements) {
-        if (el === document.documentElement || el === document.body) continue;
-
-        const htmlEl = el as HTMLElement;
-
-        if (htmlEl.id === 'scrowl-debug-root') continue;
-
-        const style = window.getComputedStyle(el);
-        const position = style.position;
-
-        if (position !== 'fixed' && position !== 'sticky') continue;
-
-        const zIndex = parseInt(style.zIndex, 10);
-        if (!isNaN(zIndex) && zIndex >= 9998) continue;
-
-        let parent = htmlEl.parentElement;
-        let isDebugElement = false;
-        while (parent && parent !== document.body) {
-            if (parent.id === 'scrowl-debug-root') {
-                isDebugElement = true;
-                break;
-            }
-            parent = parent.parentElement;
+    const candidates = document.querySelectorAll(OVERLAY_SELECTORS);
+    for (const el of candidates) {
+        if (isValidOverlay(el)) {
+            maxBottom = Math.max(maxBottom, el.getBoundingClientRect().bottom);
         }
-        if (isDebugElement) continue;
+    }
 
-        const rect = el.getBoundingClientRect();
-
-        if (rect.top >= 0 && rect.top <= 50 && rect.height > 0 && rect.width > 0) {
-            maxBottom = Math.max(maxBottom, rect.bottom);
+    if (maxBottom === 0) {
+        for (const el of document.body.children) {
+            if (isValidOverlay(el)) {
+                maxBottom = Math.max(maxBottom, el.getBoundingClientRect().bottom);
+            }
         }
     }
 
@@ -142,6 +142,11 @@ export function useScrowl(
 
     const sectionIdsKey = JSON.stringify(sectionIds);
     const stableSectionIds = useMemo(() => sectionIds, [sectionIdsKey]);
+    const sectionIndexMap = useMemo(() => {
+        const map = new Map<string, number>();
+        stableSectionIds.forEach((id, i) => map.set(id, i));
+        return map;
+    }, [stableSectionIds]);
 
     const [activeId, setActiveId] = useState<string | null>(stableSectionIds[0] || null);
     const [debugInfo, setDebugInfo] = useState<DebugInfo>({
@@ -164,7 +169,6 @@ export function useScrowl(
     const refCallbacks = useRef<Record<string, (el: HTMLElement | null) => void>>({});
     const activeIdRef = useRef<string | null>(stableSectionIds[0] || null);
     const lastScrollY = useRef<number>(0);
-    const lastActiveScore = useRef<number>(0);
     const rafId = useRef<number | null>(null);
     const isThrottled = useRef<boolean>(false);
     const throttleTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,6 +177,8 @@ export function useScrowl(
     const programmaticScrollTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
     const debugRef = useRef<boolean>(debug);
     const debugInfoRef = useRef<DebugInfo>(debugInfo);
+    const recalculateRef = useRef<() => void>(() => {});
+    const scrollCleanupRef = useRef<(() => void) | null>(null);
 
     debugRef.current = debug;
 
@@ -242,12 +248,21 @@ export function useScrowl(
     }, []);
 
     const scrollToSection = useCallback((id: string): void => {
+        if (!stableSectionIds.includes(id)) {
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn(`[scrowl] scrollToSection: id "${id}" not in sectionIds`);
+            }
+            return;
+        }
+
         const element = refs.current[id];
         if (!element) return;
 
         if (programmaticScrollTimeoutId.current) {
             clearTimeout(programmaticScrollTimeoutId.current);
         }
+
+        scrollCleanupRef.current?.();
 
         isProgrammaticScrolling.current = true;
         activeIdRef.current = id;
@@ -256,6 +271,64 @@ export function useScrowl(
         const container = containerElement;
         const elementRect = element.getBoundingClientRect();
         const effectiveOffset = getEffectiveOffset() + 10;
+
+        const scrollTarget = container || window;
+
+        const unlockScroll = () => {
+            isProgrammaticScrolling.current = false;
+            if (programmaticScrollTimeoutId.current) {
+                clearTimeout(programmaticScrollTimeoutId.current);
+                programmaticScrollTimeoutId.current = null;
+            }
+            requestAnimationFrame(() => {
+                recalculateRef.current();
+            });
+        };
+
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+        let isUnlocked = false;
+
+        const cleanup = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
+            }
+            scrollTarget.removeEventListener('scroll', handleScrollActivity);
+            if ('onscrollend' in scrollTarget) {
+                scrollTarget.removeEventListener('scrollend', handleScrollEnd);
+            }
+            scrollCleanupRef.current = null;
+        };
+
+        const doUnlock = () => {
+            if (isUnlocked) return;
+            isUnlocked = true;
+            cleanup();
+            unlockScroll();
+        };
+
+        const resetDebounce = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(doUnlock, SCROLL_IDLE_MS);
+        };
+
+        const handleScrollActivity = () => {
+            resetDebounce();
+        };
+
+        const handleScrollEnd = () => {
+            doUnlock();
+        };
+
+        scrollTarget.addEventListener('scroll', handleScrollActivity, { passive: true });
+
+        if ('onscrollend' in scrollTarget) {
+            scrollTarget.addEventListener('scrollend', handleScrollEnd, { once: true });
+        }
+
+        scrollCleanupRef.current = cleanup;
 
         if (container) {
             const containerRect = container.getBoundingClientRect();
@@ -272,11 +345,8 @@ export function useScrowl(
             });
         }
 
-        programmaticScrollTimeoutId.current = setTimeout(() => {
-            isProgrammaticScrolling.current = false;
-            programmaticScrollTimeoutId.current = null;
-        }, 600);
-    }, [containerElement, getEffectiveOffset]);
+        resetDebounce();
+    }, [stableSectionIds, containerElement, getEffectiveOffset]);
 
     const sectionProps = useCallback(
         (id: string): SectionProps => ({
@@ -384,19 +454,18 @@ export function useScrowl(
 
         const updateDebugInfo = (info: DebugInfo): void => {
             if (debugRef.current) {
-                // Only update if info actually changed to avoid unnecessary re-renders
                 const current = debugInfoRef.current;
-                const hasChanged = 
+                const hasChanged =
                     current.scrollY !== info.scrollY ||
                     current.triggerLine !== info.triggerLine ||
                     current.offsetEffective !== info.offsetEffective ||
                     current.sections.length !== info.sections.length ||
-                    current.sections.some((s, i) => 
-                        s.id !== info.sections[i]?.id || 
+                    current.sections.some((s, i) =>
+                        s.id !== info.sections[i]?.id ||
                         s.isActive !== info.sections[i]?.isActive ||
                         s.score !== info.sections[i]?.score
                     );
-                
+
                 if (hasChanged) {
                     debugInfoRef.current = info;
                     setDebugInfo(info);
@@ -452,7 +521,7 @@ export function useScrowl(
                 score += visibleInViewportRatio * 800;
             }
 
-            const sectionIndex = stableSectionIds.indexOf(section.id);
+            const sectionIndex = sectionIndexMap.get(section.id) ?? 0;
             if (scrollDirection === 'down' && isInViewport && section.top <= triggerLine && section.bottom > triggerLine) {
                 score += 200;
             } else if (scrollDirection === 'up' && isInViewport && section.top <= triggerLine && section.bottom > triggerLine) {
@@ -465,7 +534,6 @@ export function useScrowl(
                 id: section.id,
                 score,
                 visibilityRatio,
-                distanceFromTrigger: 0,
                 isInViewport,
                 bounds: section
             };
@@ -490,11 +558,9 @@ export function useScrowl(
             if (shouldSwitch) {
                 newActiveId = bestCandidate.id;
                 activeIdRef.current = newActiveId;
-                lastActiveScore.current = bestCandidate.score;
                 setActiveId((prev) => (prev !== newActiveId ? newActiveId : prev));
             } else {
                 newActiveId = currentActiveId;
-                lastActiveScore.current = currentScore.score;
             }
         }
 
@@ -512,7 +578,9 @@ export function useScrowl(
                 visibilityRatio: Math.round(s.visibilityRatio * 100) / 100
             }))
         });
-    }, [stableSectionIds, getEffectiveOffset, offsetRatio, getSectionBounds, containerElement]);
+    }, [stableSectionIds, sectionIndexMap, getEffectiveOffset, offsetRatio, getSectionBounds, containerElement]);
+
+    recalculateRef.current = calculateActiveSection;
 
     useEffect(() => {
         const container = containerElement;
@@ -584,6 +652,7 @@ export function useScrowl(
                 clearTimeout(programmaticScrollTimeoutId.current);
                 programmaticScrollTimeoutId.current = null;
             }
+            scrollCleanupRef.current?.();
             isThrottled.current = false;
             hasPendingScroll.current = false;
             isProgrammaticScrolling.current = false;

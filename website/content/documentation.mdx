@@ -27,25 +27,25 @@ import { useScrowl } from 'scrowl'
 const sections = ['intro', 'features', 'api']
 
 function Page() {
-  const { activeId, registerRef } = useScrowl(sections)
+  const { activeId, sectionProps, navProps } = useScrowl(sections)
 
   return (
     <>
       <nav>
         {sections.map(id => (
-          <a
+          <button
             key={id}
-            href={`#${id}`}
+            {...navProps(id)}
             className={activeId === id ? 'active' : ''}
           >
             {id}
-          </a>
+          </button>
         ))}
       </nav>
 
-      <section id="intro" ref={registerRef('intro')}>...</section>
-      <section id="features" ref={registerRef('features')}>...</section>
-      <section id="api" ref={registerRef('api')}>...</section>
+      <section {...sectionProps('intro')}>...</section>
+      <section {...sectionProps('features')}>...</section>
+      <section {...sectionProps('api')}>...</section>
     </>
   )
 }
@@ -69,6 +69,8 @@ function Page() {
 ## Returns
 
 - `activeId` `string | null` - The ID of the currently active section.
+- `sectionProps(id)` `SectionProps` - Props to spread on section elements (includes id, ref, data-scrowl).
+- `navProps(id)` `NavProps` - Props to spread on nav items (includes onClick, aria-current, data-active).
 - `registerRef(id)` `(el: HTMLElement | null) => void` - Ref callback to attach to each section element.
 - `scrollToSection(id)` `(id: string) => void` - Programmatically scroll to a specific section.
 - `debugInfo` `DebugInfo` - Debug data (only when debug: true).

@@ -10,6 +10,7 @@ import type { RefObject } from 'react';
 
 const VISIBILITY_THRESHOLD = 0.6;
 const HYSTERESIS_SCORE_MARGIN = 150;
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 type SectionBounds = {
     id: string;
@@ -139,7 +140,7 @@ export function useScrowl(
 ): UseScrowlReturn | UseScrowlReturnWithDebug {
     const { offset = 'auto', offsetRatio = 0.08, debounceMs = 10, debug = false } = options;
 
-    const sectionIdsKey = sectionIds.join(',');
+    const sectionIdsKey = JSON.stringify(sectionIds);
     const stableSectionIds = useMemo(() => sectionIds, [sectionIdsKey]);
 
     const [activeId, setActiveId] = useState<string | null>(stableSectionIds[0] || null);
@@ -151,14 +152,16 @@ export function useScrowl(
         offsetEffective: 0,
         sections: []
     });
-    const [detectedOffset, setDetectedOffset] = useState<number>(() => {
+    const [detectedOffset, setDetectedOffset] = useState<number | null>(() => {
         if (offset === 'auto' && typeof window !== 'undefined') {
             return detectTopOverlayHeight();
         }
-        return 0;
+        return null;
     });
+    const [containerElement, setContainerElement] = useState<HTMLElement | null>(null);
 
     const refs = useRef<Record<string, HTMLElement | null>>({});
+    const refCallbacks = useRef<Record<string, (el: HTMLElement | null) => void>>({});
     const activeIdRef = useRef<string | null>(stableSectionIds[0] || null);
     const lastScrollY = useRef<number>(0);
     const lastActiveScore = useRef<number>(0);
@@ -175,12 +178,13 @@ export function useScrowl(
 
     const getEffectiveOffset = useCallback((): number => {
         if (offset === 'auto') {
-            return detectedOffset || detectTopOverlayHeight();
+            if (typeof window === 'undefined') return 0;
+            return detectedOffset ?? detectTopOverlayHeight();
         }
         return offset;
     }, [offset, detectedOffset]);
 
-    useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         if (offset !== 'auto') return;
 
         const updateDetectedOffset = (): void => {
@@ -203,7 +207,7 @@ export function useScrowl(
         };
     }, [offset]);
 
-    useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         if (offset !== 'auto') return;
 
         const timeoutId = setTimeout(() => {
@@ -214,12 +218,27 @@ export function useScrowl(
         return () => clearTimeout(timeoutId);
     }, [offset, debug]);
 
-    const registerRef = useCallback((id: string) => (el: HTMLElement | null) => {
-        if (el) {
-            refs.current[id] = el;
-        } else {
-            delete refs.current[id];
+    useIsomorphicLayoutEffect(() => {
+        const nextContainer = containerRef?.current ?? null;
+        if (nextContainer !== containerElement) {
+            setContainerElement(nextContainer);
         }
+    }, [containerRef, containerElement]);
+
+    const registerRef = useCallback((id: string) => {
+        const existing = refCallbacks.current[id];
+        if (existing) return existing;
+
+        const callback = (el: HTMLElement | null) => {
+            if (el) {
+                refs.current[id] = el;
+            } else {
+                delete refs.current[id];
+            }
+        };
+
+        refCallbacks.current[id] = callback;
+        return callback;
     }, []);
 
     const scrollToSection = useCallback((id: string): void => {
@@ -234,7 +253,7 @@ export function useScrowl(
         activeIdRef.current = id;
         setActiveId(id);
 
-        const container = containerRef?.current;
+        const container = containerElement;
         const elementRect = element.getBoundingClientRect();
         const effectiveOffset = getEffectiveOffset() + 10;
 
@@ -257,7 +276,7 @@ export function useScrowl(
             isProgrammaticScrolling.current = false;
             programmaticScrollTimeoutId.current = null;
         }, 600);
-    }, [containerRef, getEffectiveOffset]);
+    }, [containerElement, getEffectiveOffset]);
 
     const sectionProps = useCallback(
         (id: string): SectionProps => ({
@@ -277,8 +296,35 @@ export function useScrowl(
         [activeId, scrollToSection]
     );
 
+    useEffect(() => {
+        const idsSet = new Set(stableSectionIds);
+
+        for (const id of Object.keys(refs.current)) {
+            if (!idsSet.has(id)) {
+                delete refs.current[id];
+            }
+        }
+
+        for (const id of Object.keys(refCallbacks.current)) {
+            if (!idsSet.has(id)) {
+                delete refCallbacks.current[id];
+            }
+        }
+
+        const currentActive = activeIdRef.current;
+        const nextActive = currentActive && idsSet.has(currentActive)
+            ? currentActive
+            : stableSectionIds[0] ?? null;
+
+        if (nextActive !== currentActive) {
+            activeIdRef.current = nextActive;
+        }
+
+        setActiveId((prev) => (prev !== nextActive ? nextActive : prev));
+    }, [sectionIdsKey, stableSectionIds]);
+
     const getSectionBounds = useCallback((): SectionBounds[] => {
-        const container = containerRef?.current;
+        const container = containerElement;
         const scrollTop = container ? container.scrollTop : window.scrollY;
         const containerTop = container ? container.getBoundingClientRect().top : 0;
 
@@ -298,12 +344,12 @@ export function useScrowl(
                 };
             })
             .filter((bounds): bounds is SectionBounds => bounds !== null);
-    }, [stableSectionIds, containerRef]);
+    }, [stableSectionIds, containerElement]);
 
     const calculateActiveSection = useCallback(() => {
         if (isProgrammaticScrolling.current) return;
 
-        const container = containerRef?.current;
+        const container = containerElement;
         const currentActiveId = activeIdRef.current;
         const scrollY = container ? container.scrollTop : window.scrollY;
         const viewportHeight = container ? container.clientHeight : window.innerHeight;
@@ -466,10 +512,10 @@ export function useScrowl(
                 visibilityRatio: Math.round(s.visibilityRatio * 100) / 100
             }))
         });
-    }, [stableSectionIds, getEffectiveOffset, offsetRatio, getSectionBounds, containerRef]);
+    }, [stableSectionIds, getEffectiveOffset, offsetRatio, getSectionBounds, containerElement]);
 
     useEffect(() => {
-        const container = containerRef?.current;
+        const container = containerElement;
         const scrollTarget = container || window;
 
         const scheduleCalculate = (): void => {
@@ -542,7 +588,7 @@ export function useScrowl(
             hasPendingScroll.current = false;
             isProgrammaticScrolling.current = false;
         };
-    }, [calculateActiveSection, debounceMs, containerRef]);
+    }, [calculateActiveSection, debounceMs, containerElement]);
 
     if (debug) {
         return {
@@ -565,4 +611,3 @@ export function useScrowl(
 }
 
 export default useScrowl;
-

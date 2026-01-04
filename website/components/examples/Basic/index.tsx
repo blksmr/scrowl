@@ -1,6 +1,7 @@
 "use client";
 
 import { useScrowl } from "scrowl";
+import { useNavProgress } from "./useNavProgress";
 
 const SECTIONS = [
   { id: "desert", label: "Desert", caption: "desert_dunes_offroad_tracks_wide_sky_16x9.jpg", color: "#c6bdac" },
@@ -12,9 +13,13 @@ const SECTIONS = [
 const SECTION_IDS = SECTIONS.map((s) => s.id);
 
 export function Basic() {
-  const { activeId, sectionProps, navProps } = useScrowl(SECTION_IDS, null, {
+  const { sectionProps, navProps, debugInfo } = useScrowl(SECTION_IDS, null, {
     offset: 0,
+    debug: true,
   });
+
+  const { getIndicatorStyle } = useNavProgress(SECTION_IDS, debugInfo);
+  console.log(debugInfo);
 
   return (
     <div className="relative min-h-screen bg-white">
@@ -26,9 +31,8 @@ export function Basic() {
             className="group flex items-center gap-3"
           >
             <span
-              className={`block h-0.5 rounded-full bg-black transition-all duration-300 ${
-                activeId === id ? "w-6 opacity-100" : "w-4 opacity-20 group-hover:opacity-70"
-              }`}
+              className="block h-0.5 rounded-full bg-black transition-[width,opacity] duration-100 ease-out group-hover:opacity-70"
+              style={getIndicatorStyle(id)}
             />
           </button>
         ))}

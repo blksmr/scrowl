@@ -1,11 +1,9 @@
 import { Inter, Roboto_Mono } from "next/font/google";
 import "@/styles/main.css";
-import type { Metadata, Viewport } from "next";
+import type { Viewport } from "next";
+import { siteConfig } from "@/config/site";
 
-export const metadata: Metadata = {
-  title: "Scrowl",
-  description: "A lightweight scroll spy hook for React"
-};
+export const metadata = siteConfig;
 
 export const viewport: Viewport = {
   width: "device-width",

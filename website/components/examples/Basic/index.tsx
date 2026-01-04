@@ -12,7 +12,7 @@ const SECTIONS = [
 const SECTION_IDS = SECTIONS.map((s) => s.id);
 
 export function Basic() {
-  const { activeId, registerRef, scrollToSection } = useScrowl(SECTION_IDS, null, {
+  const { activeId, sectionProps, navProps } = useScrowl(SECTION_IDS, null, {
     offset: 0,
   });
 
@@ -22,7 +22,7 @@ export function Basic() {
         {SECTIONS.map(({ id }) => (
           <button
             key={id}
-            onClick={() => scrollToSection(id)}
+            {...navProps(id)}
             className="group flex items-center gap-3"
           >
             <span
@@ -38,8 +38,7 @@ export function Basic() {
         {SECTIONS.map(({ id, label, caption, color }) => (
           <section
             key={id}
-            id={id}
-            ref={registerRef(id)}
+            {...sectionProps(id)}
             className="flex items-center justify-center p-12 relative flex-col gap-2"
             style={{ minHeight: "100vh" }}
           >
@@ -47,7 +46,7 @@ export function Basic() {
               className="relative w-full max-w-[430px] overflow-hidden rounded-lg"
               style={{ aspectRatio: "3/2" }}
             >
-              <figure 
+              <figure
               className="absolute inset-0"
               style={{ backgroundColor: color }}
               >

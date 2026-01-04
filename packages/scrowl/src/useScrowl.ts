@@ -47,10 +47,24 @@ type ScrowlOptionsWithoutDebug = ScrowlOptions & {
     debug?: false;
 };
 
+export type SectionProps = {
+    id: string;
+    ref: (el: HTMLElement | null) => void;
+    'data-scrowl': string;
+};
+
+export type NavProps = {
+    onClick: () => void;
+    'aria-current': 'page' | undefined;
+    'data-active': boolean;
+};
+
 export type UseScrowlReturn = {
     activeId: string | null;
     registerRef: (id: string) => (el: HTMLElement | null) => void;
     scrollToSection: (id: string) => void;
+    sectionProps: (id: string) => SectionProps;
+    navProps: (id: string) => NavProps;
 };
 
 export type UseScrowlReturnWithDebug = UseScrowlReturn & {
@@ -245,6 +259,23 @@ export function useScrowl(
         }, 600);
     }, [containerRef, getEffectiveOffset]);
 
+    const sectionProps = useCallback(
+        (id: string): SectionProps => ({
+            id,
+            ref: registerRef(id),
+            'data-scrowl': id,
+        }),
+        [registerRef]
+    );
+
+    const navProps = useCallback(
+        (id: string): NavProps => ({
+            onClick: () => scrollToSection(id),
+            'aria-current': activeId === id ? 'page' : undefined,
+            'data-active': activeId === id,
+        }),
+        [activeId, scrollToSection]
+    );
 
     const getSectionBounds = useCallback((): SectionBounds[] => {
         const container = containerRef?.current;
@@ -518,6 +549,8 @@ export function useScrowl(
             activeId,
             registerRef,
             scrollToSection,
+            sectionProps,
+            navProps,
             debugInfo
         };
     }
@@ -525,7 +558,9 @@ export function useScrowl(
     return {
         activeId,
         registerRef,
-        scrollToSection
+        scrollToSection,
+        sectionProps,
+        navProps
     };
 }
 

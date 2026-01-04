@@ -3,7 +3,9 @@ export type {
     DebugInfo,
     ScrowlOptions,
     UseScrowlReturn,
-    UseScrowlReturnWithDebug
+    UseScrowlReturnWithDebug,
+    SectionProps,
+    NavProps
 } from './useScrowl';
 export { ScrowlDebugOverlay, default as ScrowlDebugOverlayDefault } from './ScrowlDebugOverlay';
 export type { ScrowlDebugOverlayProps } from './ScrowlDebugOverlay';

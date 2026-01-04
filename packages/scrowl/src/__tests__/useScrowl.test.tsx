@@ -505,4 +505,82 @@ describe('useScrowl', () => {
       document.body.removeChild(section1);
     });
   });
+
+  describe('sectionProps helper', () => {
+    it('should return correct props structure', () => {
+      const { result } = renderHook(() =>
+        useScrowl(['section-1', 'section-2'], null)
+      );
+
+      const props = result.current.sectionProps('section-1');
+
+      expect(props.id).toBe('section-1');
+      expect(props['data-scrowl']).toBe('section-1');
+      expect(typeof props.ref).toBe('function');
+    });
+
+    it('should register element when ref is called', () => {
+      const { result } = renderHook(() =>
+        useScrowl(['section-1'], null)
+      );
+
+      const props = result.current.sectionProps('section-1');
+      const mockElement = document.createElement('div');
+
+      act(() => {
+        props.ref(mockElement);
+      });
+
+      expect(mockElement).toBeDefined();
+    });
+  });
+
+  describe('navProps helper', () => {
+    it('should return correct props for inactive section', () => {
+      const { result } = renderHook(() =>
+        useScrowl(['s1', 's2'], null)
+      );
+
+      const props = result.current.navProps('s2');
+
+      expect(props['aria-current']).toBeUndefined();
+      expect(props['data-active']).toBe(false);
+      expect(typeof props.onClick).toBe('function');
+    });
+
+    it('should return aria-current="page" for active section', () => {
+      const { result } = renderHook(() =>
+        useScrowl(['s1', 's2'], null)
+      );
+
+      const props = result.current.navProps('s1');
+
+      expect(props['aria-current']).toBe('page');
+      expect(props['data-active']).toBe(true);
+    });
+
+    it('should call scrollToSection when onClick is triggered', () => {
+      const section1 = document.createElement('div');
+      section1.id = 's1';
+      document.body.appendChild(section1);
+
+      const { result } = renderHook(() =>
+        useScrowl(['s1'], null)
+      );
+
+      act(() => {
+        result.current.registerRef('s1')(section1);
+      });
+
+      const props = result.current.navProps('s1');
+
+      act(() => {
+        props.onClick();
+      });
+
+      expect(mockScrollTo).toHaveBeenCalled();
+
+      document.body.removeChild(section1);
+    });
+  });
 });

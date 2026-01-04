@@ -1,9 +1,9 @@
 import { Inter, Roboto_Mono } from "next/font/google";
 import "@/styles/main.css";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { siteConfig } from "@/config/site";
 
-export const metadata = siteConfig;
+export const metadata: Metadata = siteConfig;
 
 export const viewport: Viewport = {
   width: "device-width",

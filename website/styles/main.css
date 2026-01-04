@@ -29,6 +29,15 @@
     scroll-behavior: smooth;
   }
 
+  html[data-iframe] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html[data-iframe]::-webkit-scrollbar {
+    display: none;
+  }
+
   body {
     @apply bg-background antialiased;
     color: oklch(0.22213 0 0);
@@ -183,6 +192,12 @@ h1 + h2 {
   }
 }
 
-iframe {
-  @apply relative block w-full aspect-[640/470] overflow-y-auto overflow-x-hidden border border-border rounded-lg isolate;
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

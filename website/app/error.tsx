@@ -1,6 +1,6 @@
 "use client";
 
-export default function Error() {
+export default function ErrorPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">

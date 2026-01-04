@@ -16,13 +16,17 @@ const MAX_OPACITY = 1;
 export function useNavProgress(
   sectionIds: string[],
   scroll: ScrollState,
-  sections: Record<string, SectionState>
+  sections: Record<string, SectionState>,
 ) {
   const sectionProgress = useMemo((): ProgressMap => {
     const progress: ProgressMap = {};
-    sectionIds.forEach((id) => { progress[id] = 0; });
+    sectionIds.forEach((id) => {
+      progress[id] = 0;
+    });
 
-    const sectionEntries = sectionIds.map(id => ({ id, ...sections[id] })).filter(s => s.bounds);
+    const sectionEntries = sectionIds
+      .map((id) => ({ id, ...sections[id] }))
+      .filter((s) => s.bounds);
     if (!sectionEntries.length) {
       progress[sectionIds[0]] = 1;
       return progress;
@@ -37,7 +41,10 @@ export function useNavProgress(
     const sectionIndex = scrollProgress * (sectionEntries.length - 1);
 
     const lowerIndex = Math.floor(sectionIndex);
-    const upperIndex = Math.min(sectionEntries.length - 1, Math.ceil(sectionIndex));
+    const upperIndex = Math.min(
+      sectionEntries.length - 1,
+      Math.ceil(sectionIndex),
+    );
     const ratio = sectionIndex - lowerIndex;
 
     progress[sectionEntries[lowerIndex].id] = 1 - ratio;
@@ -50,7 +57,7 @@ export function useNavProgress(
 
   const getIndicatorStyle = (id: string): IndicatorStyle => {
     const progress = sectionProgress[id] ?? 0;
-    const amplified = Math.pow(progress, 0.6);
+    const amplified = progress ** 0.6;
     const width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * amplified;
     const opacity = MIN_OPACITY + (MAX_OPACITY - MIN_OPACITY) * amplified;
     return { width: `${width}px`, opacity };

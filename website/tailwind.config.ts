@@ -19,8 +19,23 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        mono: ["var(--font-mono)", "Roboto Mono", "SF Mono", "Monaco", "Consolas", "monospace"],
+        sans: [
+          "var(--font-sans)",
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-mono)",
+          "Roboto Mono",
+          "SF Mono",
+          "Monaco",
+          "Consolas",
+          "monospace",
+        ],
       },
       colors: {
         border: "var(--border)",

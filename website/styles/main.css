@@ -7,16 +7,18 @@
     --background: #fff;
     --background-secondary: oklch(0.9821 0 0);
     --foreground: #040404;
-    --primary: #8DC8E8;
+    --primary: #8dc8e8;
     --muted: #fafaf9;
     --muted-foreground: rgba(4, 4, 4, 0.6);
 
     --secondary: #fafaf9;
     --secondary-foreground: #040404;
     --secondary-foreground-hover: oklch(0.30557 0 0);
-    --border: oklch(0 0 0/5%);
+    --border: oklch(0 0 0 / 5%);
 
-    --font-mono: var(--font-mono), 'Roboto Mono', 'SF Mono', Monaco, 'Cascadia Code', Consolas, 'Courier New', monospace;
+    --font-mono:
+      var(--font-mono), "Roboto Mono", "SF Mono", Monaco, "Cascadia Code",
+      Consolas, "Courier New", monospace;
   }
 }
 
@@ -30,8 +32,8 @@
   }
 
   html[data-iframe] {
-    scrollbar-width: none;
     -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   html[data-iframe]::-webkit-scrollbar {
@@ -39,11 +41,13 @@
   }
 
   body {
-    @apply bg-background antialiased;
-    color: oklch(0.22213 0 0);
-    font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+    font-family:
+      var(--font-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "Roboto", "Oxygen", "Ubuntu", sans-serif;
     font-size: 14px;
     line-height: 1.6;
+    color: oklch(0.22213 0 0);
+    @apply bg-background antialiased;
   }
 
   h1,
@@ -51,70 +55,75 @@
   h3,
   h4,
   h5,
-  h6, strong {
+  h6,
+  strong {
     @apply font-medium;
   }
 }
 
 @layer components {
   .link-hover {
-    @apply underline underline-offset-2 transition-opacity duration-200;
     color: oklch(0.6901 0 0);
+    @apply underline underline-offset-2 transition-opacity duration-200;
   }
 
   .link-hover:hover {
     color: var(--secondary-foreground-hover);
-    transition: color .2s ease;
+    transition: color 0.2s ease;
   }
 
-   p {
+  p {
     @apply mt-3 leading-6;
   }
 
-   h1,h2,h3,h4,h5,h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-medium;
   }
 
-   a {
-    @apply underline underline-offset-2 transition-colors duration-200;
+  a {
     color: oklch(0.6901 0 0);
+    @apply underline underline-offset-2 transition-colors duration-200;
   }
 
-   a:hover {
+  a:hover {
     color: var(--secondary-foreground-hover);
   }
 
-   pre code {
-    @apply text-xs leading-[18px];
+  pre code {
     font-family: var(--font-mono);
+    @apply text-xs leading-[18px];
   }
 
-   code {
-    @apply px-1.5 text-xs rounded-md border;
+  code {
     font-family: var(--font-mono);
     background-color: var(--background-secondary);
     border-color: var(--border);
+    @apply px-1.5 text-xs rounded-md border;
   }
 
-   pre code {
+  pre code {
     @apply px-0 border-0 bg-transparent;
   }
 
-   ul {
+  ul {
     @apply mt-3 space-y-2;
   }
 
-   li {
+  li {
     @apply leading-6;
   }
 
   kbd {
-    @apply px-1.5 text-xs rounded-md border;
     font-family: var(--font-mono);
     background-color: var(--background-secondary);
     border-color: var(--border);
+    @apply px-1.5 text-xs rounded-md border;
   }
-
 }
 
 p + p,
@@ -131,8 +140,6 @@ p + .shiki,
 h1 + h2 {
   @apply mt-3;
 }
-
-
 
 * + h1,
 * + h2,

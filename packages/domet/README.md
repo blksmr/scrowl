@@ -6,7 +6,7 @@ Lightweight under the hood: a tight scroll loop and hysteresis for stable, flick
 
 For the source code, check out the [GitHub](https://github.com/blksmr/domet).
 
-## Installation ++Requires React 18 or higher++
+## Installation Requires React 18 or higher
 
 ```bash
 npm install domet
@@ -44,45 +44,45 @@ function Page() {
 
 ### Arguments
 
-<PropTable items={[
-  { name: "sectionIds", type: "string[]", description: "Array of section IDs to track" },
-  { name: "containerRef", type: "RefObject<HTMLElement> | null", default: "null", description: "Scrollable container (defaults to window)" },
-  { name: "options", type: "DometOptions", default: "{}", description: "Configuration options" },
-]} />
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `sectionIds` | `string[]` | — | Array of section IDs to track |
+| `containerRef` | `RefObject<HTMLElement> \| null` | `null` | Scrollable container (defaults to window) |
+| `options` | `DometOptions` | `{}` | Configuration options |
 
 ### Options
 
-<PropTable items={[
-  { name: "offset", type: "number", default: "0", description: "Trigger offset from top in pixels" },
-  { name: "offsetRatio", type: "number", default: "0.08", description: "Viewport ratio for trigger line calculation" },
-  { name: "debounceMs", type: "number", default: "10", description: "Throttle delay in milliseconds" },
-  { name: "visibilityThreshold", type: "number", default: "0.6", description: "Minimum visibility ratio (0-1) for section to get priority" },
-  { name: "hysteresisMargin", type: "number", default: "150", description: "Score margin to prevent rapid section switching" },
-  { name: "behavior", type: "'smooth' | 'instant' | 'auto'", default: "'auto'", description: "Scroll behavior. 'auto' respects prefers-reduced-motion" },
-]} />
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `offset` | `number` | `0` | Trigger offset from top in pixels |
+| `offsetRatio` | `number` | `0.08` | Viewport ratio for trigger line calculation |
+| `debounceMs` | `number` | `10` | Throttle delay in milliseconds |
+| `visibilityThreshold` | `number` | `0.6` | Minimum visibility ratio (0-1) for section to get priority |
+| `hysteresisMargin` | `number` | `150` | Score margin to prevent rapid section switching |
+| `behavior` | `'smooth' \| 'instant' \| 'auto'` | `'auto'` | Scroll behavior. 'auto' respects prefers-reduced-motion |
 
 ### Callbacks
 
-<PropTable items={[
-  { name: "onActiveChange", type: "(id: string | null, prevId: string | null) => void", description: "Called when active section changes" },
-  { name: "onSectionEnter", type: "(id: string) => void", description: "Called when a section enters the viewport" },
-  { name: "onSectionLeave", type: "(id: string) => void", description: "Called when a section leaves the viewport" },
-  { name: "onScrollStart", type: "() => void", description: "Called when scrolling starts" },
-  { name: "onScrollEnd", type: "() => void", description: "Called when scrolling stops" },
-]} />
+| Prop | Type | Description |
+|------|------|-------------|
+| `onActiveChange` | `(id: string \| null, prevId: string \| null) => void` | Called when active section changes |
+| `onSectionEnter` | `(id: string) => void` | Called when a section enters the viewport |
+| `onSectionLeave` | `(id: string) => void` | Called when a section leaves the viewport |
+| `onScrollStart` | `() => void` | Called when scrolling starts |
+| `onScrollEnd` | `() => void` | Called when scrolling stops |
 
 ### Return Value
 
-<PropTable items={[
-  { name: "activeId", type: "string | null", description: "ID of the currently active section" },
-  { name: "activeIndex", type: "number", description: "Index of the active section in sectionIds (-1 if none)" },
-  { name: "scroll", type: "ScrollState", description: "Global scroll state" },
-  { name: "sections", type: "Record<string, SectionState>", description: "Per-section state indexed by ID" },
-  { name: "sectionProps", type: "(id: string) => SectionProps", description: "Props to spread on section elements" },
-  { name: "navProps", type: "(id: string) => NavProps", description: "Props to spread on nav items" },
-  { name: "registerRef", type: "(id: string) => (el: HTMLElement | null) => void", description: "Manual ref registration" },
-  { name: "scrollToSection", type: "(id: string) => void", description: "Programmatically scroll to a section" },
-]} />
+| Prop | Type | Description |
+|------|------|-------------|
+| `activeId` | `string \| null` | ID of the currently active section |
+| `activeIndex` | `number` | Index of the active section in sectionIds (-1 if none) |
+| `scroll` | `ScrollState` | Global scroll state |
+| `sections` | `Record<string, SectionState>` | Per-section state indexed by ID |
+| `sectionProps` | `(id: string) => SectionProps` | Props to spread on section elements |
+| `navProps` | `(id: string) => NavProps` | Props to spread on nav items |
+| `registerRef` | `(id: string) => (el: HTMLElement \| null) => void` | Manual ref registration |
+| `scrollToSection` | `(id: string) => void` | Programmatically scroll to a section |
 
 ## Types
 

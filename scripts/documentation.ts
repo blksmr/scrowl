@@ -45,16 +45,66 @@ function extractFrontmatter(content: string): {
   return { frontmatter, content: remainingContent };
 }
 
+function transformPropTable(match: string): string {
+  const items: Array<{
+    name: string;
+    type: string;
+    default?: string;
+    description: string;
+  }> = [];
+
+  const itemRegex =
+    /\{\s*name:\s*"([^"]+)",\s*type:\s*"([^"]+)"(?:,\s*default:\s*"([^"]*)")?,\s*description:\s*"([^"]+)"\s*\}/g;
+
+  let itemMatch: RegExpExecArray | null;
+  while ((itemMatch = itemRegex.exec(match)) !== null) {
+    items.push({
+      name: itemMatch[1],
+      type: itemMatch[2],
+      default: itemMatch[3],
+      description: itemMatch[4],
+    });
+  }
+
+  if (items.length === 0) return "";
+
+  const hasDefault = items.some((item) => item.default !== undefined);
+
+  const escapeType = (type: string) => type.replace(/\|/g, "\\|");
+
+  if (hasDefault) {
+    const header = "| Prop | Type | Default | Description |";
+    const separator = "|------|------|---------|-------------|";
+    const rows = items.map(
+      (item) =>
+        `| \`${item.name}\` | \`${escapeType(item.type)}\` | ${item.default ? `\`${item.default}\`` : "—"} | ${item.description} |`,
+    );
+    return [header, separator, ...rows].join("\n");
+  }
+  const header = "| Prop | Type | Description |";
+  const separator = "|------|------|-------------|";
+  const rows = items.map(
+    (item) =>
+      `| \`${item.name}\` | \`${escapeType(item.type)}\` | ${item.description} |`,
+  );
+  return [header, separator, ...rows].join("\n");
+}
+
 function transformContent(content: string): string {
   const { frontmatter, content: bodyContent } = extractFrontmatter(content);
   const title = frontmatter.title || "domet";
 
   let transformed = `# ${title}\n\n${bodyContent}`;
 
+  transformed = transformed.replace(/<Demo[^>]*\/>(\s*\n)*/g, "");
+
+  transformed = transformed.replace(/\+\+([^+]+)\+\+/g, "$1");
+
   transformed = transformed.replace(
-    /<Demo[^>]*\/>(\s*\n)*/g,
-    "",
+    /<PropTable\s+items=\{\[([\s\S]*?)\]\}\s*\/>/g,
+    (match) => transformPropTable(match),
   );
+
   transformed = transformed.replace(/\n{3,}/g, "\n\n");
   return `${transformed.trim()}\n`;
 }

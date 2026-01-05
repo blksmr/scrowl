@@ -1,6 +1,7 @@
 import {
   rehypeCode,
   rehypeCodeDefaultOptions,
+  remarkNpm,
 } from "fumadocs-core/mdx-plugins";
 import { remarkInstall } from "fumadocs-docgen";
 import {
@@ -9,6 +10,7 @@ import {
   frontmatterSchema,
   metaSchema,
 } from "fumadocs-mdx/config";
+import { remarkSmall } from "./lib/remark-small";
 
 import type { z } from "zod";
 
@@ -25,7 +27,7 @@ export const docs = defineDocs({
 export default defineConfig({
   lastModifiedTime: "git",
   mdxOptions: {
-    remarkPlugins: [remarkInstall],
+    remarkPlugins: [remarkNpm, remarkSmall],
     rehypeCodeOptions: {
       themes: {
         light: "github-light",

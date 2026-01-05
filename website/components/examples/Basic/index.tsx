@@ -66,7 +66,7 @@ export function Basic() {
             className="flex items-center justify-center p-12 relative flex-col gap-2"
             style={{ minHeight: "100vh" }}
           >
-            <div className="relative pointer-events-none select-none w-full max-w-[430px] overflow-hidden rounded-lg aspect-[3/2]">
+            <div className="relative pointer-events-none select-none w-full max-w-[500px] overflow-hidden rounded-lg aspect-[3/2]">
               <div
                 className="absolute inset-0"
                 style={{ backgroundColor: color }}

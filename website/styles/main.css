@@ -73,6 +73,9 @@
   h6 {
     @apply font-medium;
   }
+  small {
+    @apply text-xs text-text-muted font-normal ml-auto;
+  }
 
   a {
     @apply text-text-muted hover:text-text-hover underline underline-offset-2 transition-colors duration-200;

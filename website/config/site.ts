@@ -10,7 +10,7 @@ export const APP_URL = () => {
   return "https://scrowl.blksmr.com/";
 };
 
-export const APP_NAME = "Scrowl";
+export const APP_NAME = "domet ・ /ˈdɔ.met/";
 export const APP_DESCRIPTION = "A lightweight scroll spy hook for React";
 export const APP_OG_ENDPOINT = `${APP_URL()}/opengraph.png`;
 
@@ -41,8 +41,8 @@ export const createBaseMetadata = ({
     title: metaTitle,
     description: metaDescription,
     keywords: KEYWORDS,
-    authors: [{ name: "Scrowl" }],
-    creator: "Scrowl",
+    authors: [{ name: "blksmr" }],
+    creator: "blksmr",
     icons: {
       icon: "/favicon.png",
     },

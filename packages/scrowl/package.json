@@ -1,7 +1,26 @@
 {
   "name": "scrowl",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A React hook for scroll tracking with smooth 60fps performance and smart hysteresis",
+  "license": "MIT",
+  "author": "blksmr",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blksmr/scrowl.git"
+  },
+  "homepage": "https://scrowl.blksmr.com",
+  "bugs": {
+    "url": "https://github.com/blksmr/scrowl/issues"
+  },
+  "keywords": [
+    "react",
+    "scroll",
+    "scroll-spy",
+    "scrollspy",
+    "hooks",
+    "navigation",
+    "active-section"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -15,6 +34,7 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

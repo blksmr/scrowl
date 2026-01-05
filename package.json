@@ -10,7 +10,7 @@
     "start": "cd website && npm run start",
     "build:dev": "turbo run build:dev",
     "documentation": "npx tsx scripts/documentation.ts",
-    "publish": "npm run build && npm publish --workspace=packages/domet"
+    "publish": "npm run build && npm version patch --workspace=packages/domet && npm publish --workspace=packages/domet"
   },
   "workspaces": [
     "packages/*",

@@ -76,7 +76,8 @@ export function Basic() {
                   alt={label}
                   fill
                   priority={index === 0}
-                  className="object-cover"
+                  onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
+                  className="object-cover opacity-0 transition-opacity duration-500 ease-out"
                 />
               </div>
             </div>

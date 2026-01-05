@@ -174,6 +174,12 @@ useScrowl(sections, null, {
 })
 ```
 
+## Why domet?
+
+This library was born from a real need at work. I wanted a scroll-spy solution that was powerful and completely headless, but above all, extremely lightweight. No bloated dependencies, no opinionated styling, just a hook that does one thing well.
+
+The name **domet** comes from Bosnian/Serbian/Croatian and means "reach" or "range" — the distance something can cover. Pronounced `/ˈdɔ.met/`: stress on the first syllable, open "o", and a hard "t" at the end.
+
 ## Support
 
 For issues or feature requests, open an issue on [GitHub](https://github.com/blksmr/scrowl).

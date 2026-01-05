@@ -8,10 +8,9 @@
     --text-muted: oklch(0.6901 0 0);
     --text-hover: oklch(0.30557 0 0);
     --background: #fff;
-    --table-header-background: oklch(98.65% 0 0);
     --background-secondary: oklch(0.9821 0 0);
     --primary: #8dc8e8;
-    --border: oklch(0 0 0 / 5%);
+    --border: oklch(0 0 0 / 7%);
 
     --font-mono:
       var(--font-mono), "Roboto Mono", "SF Mono", Monaco, "Cascadia Code",

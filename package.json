@@ -12,6 +12,10 @@
     "documentation": "npx tsx scripts/documentation.ts",
     "publish": "npm run build && npm publish --workspace=packages/domet"
   },
+  "workspaces": [
+    "packages/*",
+    "website"
+  ],
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",
     "husky": "^9.1.7",

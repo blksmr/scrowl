@@ -10,6 +10,7 @@
     "website"
   ],
   "scripts": {
+    "prepare": "husky",
     "dev": "turbo run dev",
     "test": "turbo run test",
     "lint": "turbo run lint",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",
+    "husky": "^9.1.7",
     "turbo": "^2.5.4",
     "typescript": "5.8.3"
   }

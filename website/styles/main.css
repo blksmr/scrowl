@@ -125,8 +125,41 @@
     @apply px-1.5 text-xs rounded-md border;
   }
 
+  .table-wrapper {
+    @apply w-full;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (min-width: 769px) {
+    .table-wrapper {
+      overflow-x: visible;
+    }
+  }
+
   table {
     @apply w-full mt-4 text-sm border-collapse table-fixed;
+  }
+
+  /* Mobile: Make tables scrollable horizontally */
+  @media (max-width: 768px) {
+    .table-wrapper table {
+      @apply table-auto;
+      min-width: 600px;
+      width: max-content;
+    }
+
+    .table-wrapper th:first-child,
+    .table-wrapper td:first-child {
+      @apply w-auto;
+      min-width: 140px;
+    }
+
+    .table-wrapper th:last-child,
+    .table-wrapper td:last-child {
+      @apply w-auto;
+      min-width: 250px;
+    }
   }
 
   thead {

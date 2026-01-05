@@ -4,5 +4,10 @@ import { Demo } from "@/components/Demo";
 export function getMDXComponents(): MDXComponents {
   return {
     Demo,
+    table: (props) => (
+      <div className="table-wrapper">
+        <table {...props} />
+      </div>
+    ),
   };
 }

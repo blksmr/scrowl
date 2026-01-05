@@ -36,10 +36,7 @@ const SECTION_IDS = SECTIONS.map((s) => s.id);
 export function Basic() {
   const { sectionProps, navProps, scroll, sections } = useScrowl(
     SECTION_IDS,
-    null,
-    {
-      offset: 0,
-    },
+    null
   );
 
   const { getIndicatorStyle } = useNavProgress(SECTION_IDS, scroll, sections);

@@ -9,8 +9,8 @@ type IconProps = SVGProps<SVGSVGElement> & {
 export function OpenExternal({
   fill = "currentColor",
   secondaryfill,
-  width = "1em",
-  height = "1em",
+  width = "0.75rem",
+  height = "0.75rem",
   ...props
 }: IconProps) {
   const secondary = secondaryfill || fill;
@@ -19,21 +19,20 @@ export function OpenExternal({
     <svg
       height={height}
       width={width}
-      viewBox="0 0 18 18"
+      viewBox="0 0 12 12"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <g fill={fill}>
-        <path
-          d="m12.8828,14.5h-5.1328c-2.3433,0-4.25-1.9067-4.25-4.25v-5.1329c-1.1506.3289-2,1.3781-2,2.6329v6c0,1.5166,1.2334,2.75,2.75,2.75h6c1.2549,0,2.3042-.8494,2.6328-2Z"
-          fill={secondary}
-          strokeWidth="0"
-        />
-        <path
-          d="m13.75,1.5h-6c-1.5188,0-2.75,1.2312-2.75,2.75v6c0,1.5188,1.2312,2.75,2.75,2.75h6c1.5188,0,2.75-1.2312,2.75-2.75v-6c0-1.5188-1.2312-2.75-2.75-2.75Zm-.25,6.75c0,.4141-.3359.75-.75.75s-.75-.3359-.75-.75v-1.1895l-2.4697,2.4697c-.1465.1465-.3379.2197-.5303.2197s-.3838-.0732-.5303-.2197c-.293-.293-.293-.7676,0-1.0605l2.4697-2.4697h-1.1895c-.4141,0-.75-.3359-.75-.75s.3359-.75.75-.75h3c.4141,0,.75.3359.75.75v3Z"
-          fill={fill}
-          strokeWidth="0"
-        />
+      <g
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+        stroke={fill}
+      >
+        <polyline points="7.75 7.5 7.75 4.25 4.5 4.25"></polyline>
+        <line x1="7.5" y1="4.5" x2=".75" y2="11.25"></line>
+        <path d="m5.785,10.25h2.965c1.105,0,2-.895,2-2V2.75c0-1.105-.895-2-2-2H3.75c-1.105,0-2,.895-2,2v3.465"></path>
       </g>
     </svg>
   );

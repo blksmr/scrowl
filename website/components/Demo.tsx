@@ -20,10 +20,10 @@ export function Demo({ src }: DemoProps) {
         href={fullSrc}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-2 right-2 p-1 bg-fd-background/80 backdrop-blur-sm border border-border rounded-full text-fd-muted-foreground hover:text-fd-foreground hover:bg-fd-background transition-colors"
+        className="absolute bottom-2 right-2 p-1 bg-fd-background/80 backdrop-blur-sm border border-border rounded-md text-fd-muted-foreground hover:text-fd-foreground hover:bg-fd-background transition-colors"
         title="Ouvrir dans un nouvel onglet"
       >
-        <OpenExternal width="16" height="16" />
+        <OpenExternal />
       </a>
     </div>
   );

@@ -51,7 +51,7 @@ export function Basic() {
             className="group flex items-center gap-3"
           >
             <span
-              className="block h-0.5 rounded-full bg-black transition-[width,opacity] duration-100 ease-out group-hover:opacity-70"
+              className="block h-0.5 rounded-full bg-black transition-[opacity] will-change-opacity ease-out group-hover:opacity-70"
               style={getIndicatorStyle(id)}
             />
           </button>

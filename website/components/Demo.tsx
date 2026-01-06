@@ -14,12 +14,12 @@ export function Demo({ src, caption = "" }: DemoProps) {
     <figure className="relative">
       <iframe
         src={fullSrc}
-        className="relative block w-full aspect-[640/470] overflow-y-auto overflow-x-hidden border border-border rounded-lg isolate no-scrollbar"
+        className="relative block w-full aspect-[640/720] sm:aspect-[640/470] overflow-y-auto overflow-x-hidden border border-border rounded-lg isolate no-scrollbar"
         title={caption}
       />
-      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-end gap-2">
         {caption && (
-          <figcaption className="px-2 bg-black/30 backdrop-blur-sm text-white rounded-full text-xs select-none truncate max-w-[150px] sm:max-w-none">
+          <figcaption className="px-2 bg-black/30 backdrop-blur-sm text-white rounded-full text-xs select-none truncate min-w-0">
             {caption}
           </figcaption>
         )}

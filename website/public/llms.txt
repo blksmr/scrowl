@@ -102,6 +102,7 @@ type ScrollState = {
   maxScroll: number                // Maximum scroll value
   viewportHeight: number           // Viewport height in pixels
   offset: number                   // Effective trigger offset
+  triggerLine: number              // Dynamic trigger line position in viewport
 }
 ```
 

@@ -3,6 +3,7 @@ import type {
   SectionScore,
   ResolvedSection,
 } from "./types";
+import { MIN_SCROLL_THRESHOLD, EDGE_TOLERANCE } from "./constants";
 
 export type ScoringContext = {
   scrollY: number;
@@ -21,20 +22,18 @@ export function getSectionBounds(
   const scrollTop = container ? container.scrollTop : window.scrollY;
   const containerTop = container ? container.getBoundingClientRect().top : 0;
 
-  return sections
-    .map(({ id, element }) => {
-      const rect = element.getBoundingClientRect();
-      const relativeTop = container
-        ? rect.top - containerTop + scrollTop
-        : rect.top + window.scrollY;
-      return {
-        id,
-        top: relativeTop,
-        bottom: relativeTop + rect.height,
-        height: rect.height,
-      };
-    })
-    .filter((bounds): bounds is InternalSectionBounds => bounds !== null);
+  return sections.map(({ id, element }) => {
+    const rect = element.getBoundingClientRect();
+    const relativeTop = container
+      ? rect.top - containerTop + scrollTop
+      : rect.top + window.scrollY;
+    return {
+      id,
+      top: relativeTop,
+      bottom: relativeTop + rect.height,
+      height: rect.height,
+    };
+  });
 }
 
 export function calculateSectionScores(
@@ -47,13 +46,17 @@ export function calculateSectionScores(
     viewportHeight,
     effectiveOffset,
     visibilityThreshold,
-    scrollDirection,
-    sectionIndexMap,
+    scrollDirection: _scrollDirection,
+    sectionIndexMap: _sectionIndexMap,
   } = ctx;
 
-  const triggerLine = scrollY + effectiveOffset;
   const viewportTop = scrollY;
   const viewportBottom = scrollY + viewportHeight;
+
+  const maxScroll = Math.max(1, ctx.scrollHeight - viewportHeight);
+  const scrollProgress = Math.min(1, Math.max(0, scrollY / maxScroll));
+  const dynamicOffset = effectiveOffset + scrollProgress * (viewportHeight - effectiveOffset * 2);
+  const triggerLine = scrollY + dynamicOffset;
 
   const elementMap = new Map(sections.map((s) => [s.id, s.element]));
 
@@ -84,17 +87,21 @@ export function calculateSectionScores(
       score += visibleInViewportRatio * 800;
     }
 
-    const sectionIndex = sectionIndexMap.get(section.id) ?? 0;
-    if (
-      scrollDirection &&
-      isInView &&
-      section.top <= triggerLine &&
-      section.bottom > triggerLine
-    ) {
-      score += 200;
-    }
+    if (isInView) {
+      const containsTriggerLine =
+        triggerLine >= section.top && triggerLine < section.bottom;
 
-    score -= sectionIndex * 0.1;
+      if (containsTriggerLine) {
+        score += 300;
+      }
+
+      const sectionCenter = section.top + section.height / 2;
+      const distanceFromTrigger = Math.abs(sectionCenter - triggerLine);
+      const maxDistance = viewportHeight;
+      const proximityScore =
+        Math.max(0, 1 - distanceFromTrigger / maxDistance) * 500;
+      score += proximityScore;
+    }
 
     const element = elementMap.get(section.id);
     const rect = element ? element.getBoundingClientRect() : null;
@@ -122,17 +129,31 @@ export function determineActiveSection(
 ): string | null {
   if (scores.length === 0 || sectionIds.length === 0) return null;
 
-  const maxScroll = Math.max(0, scrollHeight - viewportHeight);
-  const hasScroll = maxScroll > 10;
-  const isAtBottom = hasScroll && scrollY + viewportHeight >= scrollHeight - 5;
-  const isAtTop = hasScroll && scrollY <= 5;
+  const scoredIds = new Set(scores.map((s) => s.id));
 
-  if (isAtBottom) {
-    return sectionIds[sectionIds.length - 1];
+  const maxScroll = Math.max(0, scrollHeight - viewportHeight);
+  const hasScroll = maxScroll > MIN_SCROLL_THRESHOLD;
+  const isAtBottom = hasScroll && scrollY + viewportHeight >= scrollHeight - EDGE_TOLERANCE;
+  const isAtTop = hasScroll && scrollY <= EDGE_TOLERANCE;
+
+  if (isAtBottom && sectionIds.length >= 2) {
+    const lastId = sectionIds[sectionIds.length - 1];
+    const secondLastId = sectionIds[sectionIds.length - 2];
+    const secondLastScore = scores.find((s) => s.id === secondLastId);
+    const secondLastNotVisible = !secondLastScore || !secondLastScore.inView;
+    if (scoredIds.has(lastId) && secondLastNotVisible) {
+      return lastId;
+    }
   }
 
-  if (isAtTop) {
-    return sectionIds[0];
+  if (isAtTop && sectionIds.length >= 2) {
+    const firstId = sectionIds[0];
+    const secondId = sectionIds[1];
+    const secondScore = scores.find((s) => s.id === secondId);
+    const secondNotVisible = !secondScore || !secondScore.inView;
+    if (scoredIds.has(firstId) && secondNotVisible) {
+      return firstId;
+    }
   }
 
   const visibleScores = scores.filter((s) => s.inView);

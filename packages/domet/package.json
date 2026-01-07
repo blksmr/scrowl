@@ -38,7 +38,8 @@
     "./constants": {},
     "./resolvers": {},
     "./scoring": {},
-    "./types": {}
+    "./types": {},
+    "./validation": {}
   },
   "files": [
     "dist"
@@ -47,7 +48,7 @@
     "clean": "rm -rf dist",
     "dev": "bunchee -w",
     "build": "bunchee prepare && bunchee",
-    "lint": "biome check --fix --unsafe . --verbose",
+    "lint": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

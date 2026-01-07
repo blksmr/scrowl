@@ -12,12 +12,13 @@ interface LogoProps extends Omit<IconProps, "width" | "height"> {
 
 export function Logo({
   fill = "currentColor",
-  secondaryfill,
+  secondaryfill: _secondaryfill,
   size = 20,
   className,
   ...props
 }: LogoProps) {
-  secondaryfill = secondaryfill || fill;
+  const _fill = _secondaryfill || fill;
+  void _fill;
   const sizeValue = typeof size === "number" ? `${size}px` : size;
 
   return (

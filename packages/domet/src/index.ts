@@ -12,3 +12,4 @@ export type {
   UseDometReturn,
 } from "./types";
 export { default, useDomet } from "./useDomet";
+export { VALIDATION_LIMITS } from "./validation";

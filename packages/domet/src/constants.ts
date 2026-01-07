@@ -5,3 +5,6 @@ export const DEFAULT_HYSTERESIS = 150;
 export const DEFAULT_OFFSET: Offset = "8%";
 export const DEFAULT_THROTTLE = 10;
 export const SCROLL_IDLE_MS = 100;
+
+export const MIN_SCROLL_THRESHOLD = 10;
+export const EDGE_TOLERANCE = 5;

@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils"
 import { Fragment } from "react"
-import { InfoCircledIcon } from "@radix-ui/react-icons"
 
 type Prop = {
   name: string

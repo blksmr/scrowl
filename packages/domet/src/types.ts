@@ -19,6 +19,7 @@ export type ScrollState = {
   maxScroll: number;
   viewportHeight: number;
   offset: number;
+  triggerLine: number;
 };
 
 export type SectionState = {

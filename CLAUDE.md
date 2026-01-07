@@ -67,6 +67,25 @@ import type { DometOptions, UseDometReturn } from 'domet';
 
 Tests use Vitest with jsdom. Mock `IntersectionObserver` and `getBoundingClientRect` for scroll simulation.
 
+## Code Style Rules
+
+### Error and Warning Messages
+
+All user-facing messages (console warnings, error messages, UI feedback) must follow these rules:
+
+1. **Language**: Always in English
+2. **Format**: Simple, clear, and consistent
+3. **Structure**: `[context] Description.` or just `Description.`
+4. **Examples**:
+   - Console: `[domet] Invalid offset value: ${value}. Using default.`
+   - UI: `Invalid format. Use a number (e.g. 100) or percentage (e.g. 10%).`
+   - UI: `Value clamped to ±${max}px.`
+
+**Do NOT**:
+- Use French or other languages
+- Use jargon or overly technical terms
+- Write long sentences
+
 ## Documentation Rules
 
 In `website/content/documentation.mdx`:

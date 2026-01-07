@@ -53,16 +53,20 @@ function transformPropTable(match: string): string {
     description: string;
   }> = [];
 
-  const itemRegex =
-    /\{\s*name:\s*"([^"]+)",\s*type:\s*"([^"]+)"(?:,\s*default:\s*"([^"]*)")?,\s*description:\s*"([^"]+)"\s*\}/g;
+  const stringPattern = `"((?:[^"\\\\]|\\\\.)*)"`;
+  const itemRegex = new RegExp(
+    `\\{\\s*name:\\s*${stringPattern},\\s*type:\\s*${stringPattern}(?:,\\s*default:\\s*${stringPattern})?,\\s*description:\\s*${stringPattern}\\s*\\}`,
+    "g"
+  );
 
   let itemMatch: RegExpExecArray | null;
   while ((itemMatch = itemRegex.exec(match)) !== null) {
+    const unescape = (s: string) => s.replace(/\\(.)/g, "$1");
     items.push({
-      name: itemMatch[1],
-      type: itemMatch[2],
-      default: itemMatch[3],
-      description: itemMatch[4],
+      name: unescape(itemMatch[1]),
+      type: unescape(itemMatch[2]),
+      default: itemMatch[3] ? unescape(itemMatch[3]) : undefined,
+      description: unescape(itemMatch[4]),
     });
   }
 
@@ -70,7 +74,7 @@ function transformPropTable(match: string): string {
 
   const hasDefault = items.some((item) => item.default !== undefined);
 
-  const escapeType = (type: string) => type.replace(/\|/g, "\\|");
+  const escapeType = (type: string) => type.replace(/\|/g, "\\|").replace(/`/g, "\\`");
 
   if (hasDefault) {
     const header = "| Prop | Type | Default | Description |";

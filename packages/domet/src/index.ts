@@ -1,11 +1,14 @@
 export type {
   DometOptions,
-  NavProps,
+  LinkProps,
+  Offset,
+  RegisterProps,
   ScrollBehavior,
+  ScrollContainer,
   ScrollState,
+  ScrollToOptions,
   SectionBounds,
-  SectionProps,
   SectionState,
   UseDometReturn,
-} from "./useDomet";
+} from "./types";
 export { default, useDomet } from "./useDomet";

@@ -21,24 +21,26 @@ Basic example of how to use the hook.
 ```tsx showLineNumbers
 import { useDomet } from 'domet'
 
-const sections = ['intro', 'features', 'api']
+const ids = ['intro', 'features', 'api']
 
 function Page() {
-  const { activeId, sectionProps, navProps } = useDomet(sections)
+  const { active, register, link } = useDomet({
+    ids,
+  })
 
   return (
     <>
       <nav>
-        {sections.map(id => (
-          <button key={id} {...navProps(id)}>
+        {ids.map(id => (
+          <button key={id} {...link(id)}>
             {id}
           </button>
         ))}
       </nav>
 
-      <section {...sectionProps('intro')}>...</section>
-      <section {...sectionProps('features')}>...</section>
-      <section {...sectionProps('api')}>...</section>
+      <section {...register('intro')}>...</section>
+      <section {...register('features')}>...</section>
+      <section {...register('api')}>...</section>
     </>
   )
 }
@@ -46,32 +48,26 @@ function Page() {
 
 ### API Reference
 
-### Arguments
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `sectionIds` | `string[]` | — | Array of section IDs to track |
-| `containerRef` | `RefObject<HTMLElement> \| null` | `null` | Scrollable container (defaults to window) |
-| `options` | `DometOptions` | `{}` | Configuration options |
-
 ### Options
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `offset` | `number` | `0` | Trigger offset from top in pixels |
-| `offsetRatio` | `number` | `0.08` | Viewport ratio for trigger line calculation |
-| `debounceMs` | `number` | `10` | Throttle delay in milliseconds |
-| `visibilityThreshold` | `number` | `0.6` | Minimum visibility ratio (0-1) for section to get priority |
-| `hysteresisMargin` | `number` | `150` | Score margin to prevent rapid section switching |
+| `ids` | `string[]` | — | Array of section IDs to track (mutually exclusive with selector) |
+| `selector` | `string` | — | CSS selector to find sections (mutually exclusive with ids) |
+| `container` | `RefObject<HTMLElement \| null>` | `undefined` | React ref to scrollable container (defaults to window) |
+| `offset` | `number \| \`${number}%\`` | `"8%"` | Trigger offset from top (pixels or viewport percentage) |
+| `throttle` | `number` | `10` | Throttle delay in milliseconds |
+| `threshold` | `number` | `0.6` | Minimum visibility ratio (0-1) for section to get priority |
+| `hysteresis` | `number` | `150` | Score margin to prevent rapid section switching |
 | `behavior` | `'smooth' \| 'instant' \| 'auto'` | `'auto'` | Scroll behavior. 'auto' respects prefers-reduced-motion |
 
 ### Callbacks
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `onActiveChange` | `(id: string \| null, prevId: string \| null) => void` | Called when active section changes |
-| `onSectionEnter` | `(id: string) => void` | Called when a section enters the viewport |
-| `onSectionLeave` | `(id: string) => void` | Called when a section leaves the viewport |
+| `onActive` | `(id: string \| null, prevId: string \| null) => void` | Called when active section changes |
+| `onEnter` | `(id: string) => void` | Called when a section enters the viewport |
+| `onLeave` | `(id: string) => void` | Called when a section leaves the viewport |
 | `onScrollStart` | `() => void` | Called when scrolling starts |
 | `onScrollEnd` | `() => void` | Called when scrolling stops |
 
@@ -79,14 +75,16 @@ function Page() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `activeId` | `string \| null` | ID of the currently active section |
-| `activeIndex` | `number` | Index of the active section in sectionIds (-1 if none) |
-| `scroll` | `ScrollState` | Global scroll state |
+| `active` | `string \| null` | ID of the currently active section |
+| `index` | `number` | Index of the active section in ids (-1 if none) |
+| `progress` | `number` | Overall scroll progress (0-1), shortcut for scroll.progress |
+| `direction` | `'up' \| 'down' \| null` | Scroll direction, shortcut for scroll.direction |
+| `ids` | `string[]` | Resolved section IDs (useful with CSS selector) |
+| `scroll` | `ScrollState` | Full scroll state object |
 | `sections` | `Record<string, SectionState>` | Per-section state indexed by ID |
-| `sectionProps` | `(id: string) => SectionProps` | Props to spread on section elements |
-| `navProps` | `(id: string) => NavProps` | Props to spread on nav items |
-| `registerRef` | `(id: string) => (el: HTMLElement \| null) => void` | Manual ref registration |
-| `scrollToSection` | `(id: string) => void` | Programmatically scroll to a section |
+| `register` | `(id: string) => RegisterProps` | Props to spread on section elements (includes id, ref, data-domet) |
+| `link` | `(id: string) => LinkProps` | Props to spread on nav items |
+| `scrollTo` | `(id: string, options?: ScrollToOptions) => void` | Programmatically scroll to a section with optional offset and behavior override |
 
 ### Types
 
@@ -94,13 +92,13 @@ function Page() {
 
 Global scroll information updated on every scroll event.
 
-```ts
+```ts showLineNumbers
 type ScrollState = {
   y: number                        // Current scroll position in pixels
   progress: number                 // Overall scroll progress (0-1)
   direction: 'up' | 'down' | null  // Scroll direction
   velocity: number                 // Scroll speed
-  isScrolling: boolean             // True while actively scrolling
+  scrolling: boolean               // True while actively scrolling
   maxScroll: number                // Maximum scroll value
   viewportHeight: number           // Viewport height in pixels
   offset: number                   // Effective trigger offset
@@ -111,13 +109,14 @@ type ScrollState = {
 
 Per-section state available for each tracked section.
 
-```ts
+```ts showLineNumbers
 type SectionState = {
   bounds: SectionBounds  // Position and dimensions
   visibility: number     // Visibility ratio (0-1)
   progress: number       // Section scroll progress (0-1)
-  isInViewport: boolean  // True if any part is visible
-  isActive: boolean      // True if this is the active section
+  inView: boolean        // True if any part is visible
+  active: boolean        // True if this is the active section
+  rect: DOMRect | null   // Full bounding rect
 }
 
 type SectionBounds = {
@@ -127,16 +126,30 @@ type SectionBounds = {
 }
 ```
 
+### ScrollToOptions
+
+Options for programmatic scrolling.
+
+```ts showLineNumbers
+type ScrollToOptions = {
+  offset?: number | `${number}%`  // Override trigger offset
+  behavior?: 'smooth' | 'instant' | 'auto'  // Override scroll behavior
+}
+```
+
 ### Examples
 
 ### With Callbacks
 
-```tsx
-const { activeId } = useDomet(sections, null, {
-  onActiveChange: (id, prevId) => {
+React to section changes with callbacks for analytics, animations, or state updates:
+
+```tsx showLineNumbers
+const { active } = useDomet({
+  ids: ['intro', 'features', 'api'],
+  onActive: (id, prevId) => {
     console.log(`Changed from ${prevId} to ${id}`)
   },
-  onSectionEnter: (id) => {
+  onEnter: (id) => {
     console.log(`Entered: ${id}`)
   },
 })
@@ -144,43 +157,82 @@ const { activeId } = useDomet(sections, null, {
 
 ### Using Scroll State
 
-```tsx
-const { scroll, sections } = useDomet(sectionIds)
+Build progress indicators and scroll-driven animations using the scroll state:
+
+```tsx showLineNumbers
+const { progress, sections, ids } = useDomet({
+  ids: ['intro', 'features', 'api'],
+})
 
 // Global progress bar
-<div style={{ width: `${scroll.progress * 100}%` }} />
+<div style={{ width: `${progress * 100}%` }} />
 
 // Per-section animations
-{sectionIds.map(id => (
+{ids.map(id => (
   <div style={{ opacity: sections[id]?.visibility }} />
 ))}
 ```
 
 ### Custom Container
 
-```tsx
+Track scroll within a specific container instead of the window:
+
+```tsx showLineNumbers
 const containerRef = useRef<HTMLDivElement>(null)
-const { activeId } = useDomet(sections, containerRef)
+
+const { active, register } = useDomet({
+  ids: ['s1', 's2'],
+  container: containerRef,
+})
 
 return (
-  <div ref={containerRef} style={{ overflow: 'auto', height: '100vh' }}>
-    {/* sections */}
+  <div ref={containerRef} style={{ height: '100vh', overflow: 'auto' }}>
+    <section {...register('s1')}>Section 1</section>
+    <section {...register('s2')}>Section 2</section>
   </div>
 )
 ```
 
-### Fine-tuning Behavior
+### Third-party Components
+
+If a third-party component only accepts a `ref` prop (no spread), extract the ref from `register`:
 
 ```tsx
-useDomet(sections, null, {
-  visibilityThreshold: 0.8,  // Require 80% visibility
-  hysteresisMargin: 200,     // More resistance to switching
+<ThirdPartyComponent ref={register('section-1').ref} />
+```
+
+### CSS Selector for Sections
+
+Instead of passing an array of IDs, you can use the `selector` prop to automatically find sections:
+
+```tsx showLineNumbers
+const { active, ids } = useDomet({
+  selector: '[data-section]',  // CSS selector
+})
+
+// ids will contain IDs from:
+// 1. element.id
+// 2. data-domet attribute
+// 3. fallback: section-0, section-1, etc.
+```
+
+### Fine-tuning Behavior
+
+Adjust sensitivity and stability of section detection:
+
+```tsx showLineNumbers
+useDomet({
+  ids: ['intro', 'features'],
+  threshold: 0.8,    // Require 80% visibility
+  hysteresis: 200,   // More resistance to switching
 })
 ```
 
 ### Why domet?
 
 This library was born from a real need at work. I wanted a scroll-spy solution that was powerful and completely headless, but above all, extremely lightweight. No bloated dependencies, no opinionated styling, just a hook that does one thing well.
+
+Why a hook instead of a component wrapper? Because hooks give you full control. You decide the markup, the styling, and the behavior. If you want a `<ScrollSpy>` component, you can build one in minutes on top of `useDomet`. The hook stays minimal; you compose what you need.
 
 The name **domet** comes from Bosnian/Serbian/Croatian and means "reach" or "range" — the distance something can cover. Pronounced `/ˈdɔ.met/`: stress on the first syllable, open "o", and a hard "t" at the end.
 

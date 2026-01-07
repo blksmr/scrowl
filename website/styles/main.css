@@ -80,6 +80,10 @@
       @apply mt-1 leading-6;
     }
 
+    p + p:has(+ p) {
+      @apply my-2;
+    }
+
     figure,
     pre {
       @apply mt-6;

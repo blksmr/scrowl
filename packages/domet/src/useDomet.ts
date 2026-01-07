@@ -1,146 +1,77 @@
-import type { RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type {
+  DometOptions,
+  LinkProps,
+  Offset,
+  RegisterProps,
+  ResolvedSection,
+  ScrollBehavior,
+  ScrollState,
+  ScrollToOptions,
+  SectionState,
+  UseDometReturn,
+} from "./types";
 import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+  DEFAULT_THRESHOLD,
+  DEFAULT_HYSTERESIS,
+  DEFAULT_OFFSET,
+  DEFAULT_THROTTLE,
+  SCROLL_IDLE_MS,
+} from "./constants";
+import {
+  resolveContainer,
+  resolveSectionsFromIds,
+  resolveSectionsFromSelector,
+  resolveOffset,
+} from "./resolvers";
+import {
+  getSectionBounds,
+  calculateSectionScores,
+  determineActiveSection,
+} from "./scoring";
 
-const DEFAULT_VISIBILITY_THRESHOLD = 0.6;
-const DEFAULT_HYSTERESIS_MARGIN = 150;
-const SCROLL_IDLE_MS = 100;
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-export type SectionBounds = {
-  top: number;
-  bottom: number;
-  height: number;
-};
-
-export type ScrollState = {
-  y: number;
-  progress: number;
-  direction: "up" | "down" | null;
-  velocity: number;
-  isScrolling: boolean;
-  maxScroll: number;
-  viewportHeight: number;
-  offset: number;
-};
-
-export type SectionState = {
-  bounds: SectionBounds;
-  visibility: number;
-  progress: number;
-  isInViewport: boolean;
-  isActive: boolean;
-};
-
-export type ScrollBehavior = "smooth" | "instant" | "auto";
-
-export type DometOptions = {
-  offset?: number;
-  offsetRatio?: number;
-  debounceMs?: number;
-  visibilityThreshold?: number;
-  hysteresisMargin?: number;
-  behavior?: ScrollBehavior;
-  onActiveChange?: (id: string | null, prevId: string | null) => void;
-  onSectionEnter?: (id: string) => void;
-  onSectionLeave?: (id: string) => void;
-  onScrollStart?: () => void;
-  onScrollEnd?: () => void;
-};
-
-export type SectionProps = {
-  id: string;
-  ref: (el: HTMLElement | null) => void;
-  "data-domet": string;
-};
-
-export type NavProps = {
-  onClick: () => void;
-  "aria-current": "page" | undefined;
-  "data-active": boolean;
-};
-
-export type UseDometReturn = {
-  activeId: string | null;
-  activeIndex: number;
-  scroll: ScrollState;
-  sections: Record<string, SectionState>;
-  registerRef: (id: string) => (el: HTMLElement | null) => void;
-  scrollToSection: (id: string) => void;
-  sectionProps: (id: string) => SectionProps;
-  navProps: (id: string) => NavProps;
-};
-
-type InternalSectionBounds = SectionBounds & { id: string };
-
-type SectionScore = {
-  id: string;
-  score: number;
-  visibilityRatio: number;
-  isInViewport: boolean;
-  bounds: InternalSectionBounds;
-  progress: number;
-};
-
-export function useDomet(
-  sectionIds: string[],
-  containerRef: RefObject<HTMLElement> | null = null,
-  options: DometOptions = {},
-): UseDometReturn {
+export function useDomet(options: DometOptions): UseDometReturn {
   const {
-    offset = 0,
-    offsetRatio = 0.08,
-    debounceMs = 10,
-    visibilityThreshold = DEFAULT_VISIBILITY_THRESHOLD,
-    hysteresisMargin = DEFAULT_HYSTERESIS_MARGIN,
+    container: containerInput,
+    offset = DEFAULT_OFFSET,
+    throttle = DEFAULT_THROTTLE,
+    threshold = DEFAULT_THRESHOLD,
+    hysteresis = DEFAULT_HYSTERESIS,
     behavior = "auto",
-    onActiveChange,
-    onSectionEnter,
-    onSectionLeave,
+    onActive,
+    onEnter,
+    onLeave,
     onScrollStart,
     onScrollEnd,
   } = options;
 
-  const _sectionIdsKey = JSON.stringify(sectionIds);
-  const stableSectionIds = useMemo(() => sectionIds, [sectionIds]);
-  const sectionIndexMap = useMemo(() => {
-    const map = new Map<string, number>();
-    for (let i = 0; i < stableSectionIds.length; i++) {
-      map.set(stableSectionIds[i], i);
-    }
-    return map;
-  }, [stableSectionIds]);
+  const idsArray = "ids" in options ? options.ids : undefined;
+  const selectorString = "selector" in options ? options.selector : undefined;
+  const useSelector = selectorString !== undefined;
 
-  const [activeId, setActiveId] = useState<string | null>(
-    stableSectionIds[0] || null,
-  );
+  const initialActiveId = idsArray && idsArray.length > 0 ? idsArray[0] : null;
+
+  const [containerElement, setContainerElement] = useState<HTMLElement | null>(null);
+  const [resolvedSections, setResolvedSections] = useState<ResolvedSection[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(initialActiveId);
   const [scroll, setScroll] = useState<ScrollState>({
     y: 0,
     progress: 0,
     direction: null,
     velocity: 0,
-    isScrolling: false,
+    scrolling: false,
     maxScroll: 0,
     viewportHeight: 0,
     offset: 0,
   });
   const [sections, setSections] = useState<Record<string, SectionState>>({});
-  const [containerElement, setContainerElement] = useState<HTMLElement | null>(
-    null,
-  );
 
   const refs = useRef<Record<string, HTMLElement | null>>({});
-  const refCallbacks = useRef<Record<string, (el: HTMLElement | null) => void>>(
-    {},
-  );
-  const activeIdRef = useRef<string | null>(stableSectionIds[0] || null);
+  const refCallbacks = useRef<Record<string, (el: HTMLElement | null) => void>>({});
+  const activeIdRef = useRef<string | null>(initialActiveId);
   const lastScrollY = useRef<number>(0);
   const lastScrollTime = useRef<number>(Date.now());
   const rafId = useRef<number | null>(null);
@@ -148,53 +79,89 @@ export function useDomet(
   const throttleTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasPendingScroll = useRef<boolean>(false);
   const isProgrammaticScrolling = useRef<boolean>(false);
-  const programmaticScrollTimeoutId = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
+  const programmaticScrollTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isScrollingRef = useRef<boolean>(false);
-  const scrollIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const scrollIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevSectionsInViewport = useRef<Set<string>>(new Set());
   const recalculateRef = useRef<() => void>(() => {});
   const scrollCleanupRef = useRef<(() => void) | null>(null);
+  const optionsRef = useRef({ offset, behavior });
   const callbackRefs = useRef({
-    onActiveChange,
-    onSectionEnter,
-    onSectionLeave,
+    onActive,
+    onEnter,
+    onLeave,
     onScrollStart,
     onScrollEnd,
   });
 
+  optionsRef.current = { offset, behavior };
   callbackRefs.current = {
-    onActiveChange,
-    onSectionEnter,
-    onSectionLeave,
+    onActive,
+    onEnter,
+    onLeave,
     onScrollStart,
     onScrollEnd,
   };
 
-  const getEffectiveOffset = useCallback((): number => {
-    return offset;
-  }, [offset]);
+  const sectionIds = useMemo(() => {
+    if (!useSelector && idsArray) return idsArray;
+    return resolvedSections.map((s) => s.id);
+  }, [useSelector, idsArray, resolvedSections]);
 
-  const getScrollBehavior = useCallback((): ScrollBehavior => {
-    if (behavior === "auto") {
-      if (typeof window === "undefined") return "instant";
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
-      return prefersReducedMotion ? "instant" : "smooth";
+  const sectionIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < sectionIds.length; i++) {
+      map.set(sectionIds[i], i);
     }
-    return behavior;
-  }, [behavior]);
+    return map;
+  }, [sectionIds]);
 
   useIsomorphicLayoutEffect(() => {
-    const nextContainer = containerRef?.current ?? null;
-    if (nextContainer !== containerElement) {
-      setContainerElement(nextContainer);
+    const resolved = resolveContainer(containerInput);
+    if (resolved !== containerElement) {
+      setContainerElement(resolved);
     }
-  }, [containerRef, containerElement]);
+  }, [containerInput]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (useSelector && selectorString) {
+      const resolved = resolveSectionsFromSelector(selectorString);
+      setResolvedSections(resolved);
+      if (resolved.length > 0 && !activeIdRef.current) {
+        activeIdRef.current = resolved[0].id;
+        setActiveId(resolved[0].id);
+      }
+    }
+  }, [selectorString, useSelector]);
+
+  useEffect(() => {
+    if (!useSelector && idsArray) {
+      const idsSet = new Set(idsArray);
+
+      for (const id of Object.keys(refs.current)) {
+        if (!idsSet.has(id)) {
+          delete refs.current[id];
+        }
+      }
+
+      for (const id of Object.keys(refCallbacks.current)) {
+        if (!idsSet.has(id)) {
+          delete refCallbacks.current[id];
+        }
+      }
+
+      const currentActive = activeIdRef.current;
+      const nextActive =
+        currentActive && idsSet.has(currentActive)
+          ? currentActive
+          : (idsArray[0] ?? null);
+
+      if (nextActive !== currentActive) {
+        activeIdRef.current = nextActive;
+        setActiveId(nextActive);
+      }
+    }
+  }, [idsArray, useSelector]);
 
   const registerRef = useCallback((id: string) => {
     const existing = refCallbacks.current[id];
@@ -212,17 +179,37 @@ export function useDomet(
     return callback;
   }, []);
 
-  const scrollToSection = useCallback(
-    (id: string): void => {
-      if (!stableSectionIds.includes(id)) {
+  const getResolvedBehavior = useCallback((behaviorOverride?: ScrollBehavior): ScrollBehavior => {
+    const b = behaviorOverride ?? optionsRef.current.behavior;
+    if (b === "auto") {
+      if (typeof window === "undefined") return "instant";
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      return prefersReducedMotion ? "instant" : "smooth";
+    }
+    return b;
+  }, []);
+
+  const getCurrentSections = useCallback((): ResolvedSection[] => {
+    if (!useSelector && idsArray) {
+      return resolveSectionsFromIds(idsArray, refs.current);
+    }
+    return resolvedSections;
+  }, [useSelector, idsArray, resolvedSections]);
+
+  const scrollTo = useCallback(
+    (id: string, scrollOptions?: ScrollToOptions): void => {
+      if (!sectionIds.includes(id)) {
         if (process.env.NODE_ENV !== "production") {
-          console.warn(`[domet] scrollToSection: id "${id}" not in sectionIds`);
+          console.warn(`[domet] scrollTo: id "${id}" not found`);
         }
         return;
       }
 
-      const element = refs.current[id];
-      if (!element) return;
+      const currentSections = getCurrentSections();
+      const section = currentSections.find((s) => s.id === id);
+      if (!section) return;
 
       if (programmaticScrollTimeoutId.current) {
         clearTimeout(programmaticScrollTimeoutId.current);
@@ -235,8 +222,11 @@ export function useDomet(
       setActiveId(id);
 
       const container = containerElement;
-      const elementRect = element.getBoundingClientRect();
-      const effectiveOffset = getEffectiveOffset() + 10;
+      const elementRect = section.element.getBoundingClientRect();
+      const viewportHeight = container ? container.clientHeight : window.innerHeight;
+
+      const offsetValue = scrollOptions?.offset ?? optionsRef.current.offset;
+      const effectiveOffset = resolveOffset(offsetValue, viewportHeight, DEFAULT_OFFSET);
 
       const scrollTarget = container || window;
 
@@ -300,7 +290,7 @@ export function useDomet(
 
       scrollCleanupRef.current = cleanup;
 
-      const scrollBehavior = getScrollBehavior();
+      const scrollBehavior = getResolvedBehavior(scrollOptions?.behavior);
 
       if (container) {
         const containerRect = container.getBoundingClientRect();
@@ -324,11 +314,11 @@ export function useDomet(
         resetDebounce();
       }
     },
-    [stableSectionIds, containerElement, getEffectiveOffset, getScrollBehavior],
+    [sectionIds, containerElement, getResolvedBehavior, getCurrentSections],
   );
 
-  const sectionProps = useCallback(
-    (id: string): SectionProps => ({
+  const register = useCallback(
+    (id: string): RegisterProps => ({
       id,
       ref: registerRef(id),
       "data-domet": id,
@@ -336,76 +326,21 @@ export function useDomet(
     [registerRef],
   );
 
-  const navProps = useCallback(
-    (id: string): NavProps => ({
-      onClick: () => scrollToSection(id),
+  const link = useCallback(
+    (id: string): LinkProps => ({
+      onClick: () => scrollTo(id),
       "aria-current": activeId === id ? "page" : undefined,
       "data-active": activeId === id,
     }),
-    [activeId, scrollToSection],
+    [activeId, scrollTo],
   );
 
-  useEffect(() => {
-    const idsSet = new Set(stableSectionIds);
-
-    for (const id of Object.keys(refs.current)) {
-      if (!idsSet.has(id)) {
-        delete refs.current[id];
-      }
-    }
-
-    for (const id of Object.keys(refCallbacks.current)) {
-      if (!idsSet.has(id)) {
-        delete refCallbacks.current[id];
-      }
-    }
-
-    const currentActive = activeIdRef.current;
-    const nextActive =
-      currentActive && idsSet.has(currentActive)
-        ? currentActive
-        : (stableSectionIds[0] ?? null);
-
-    if (nextActive !== currentActive) {
-      activeIdRef.current = nextActive;
-    }
-
-    setActiveId((prev) => (prev !== nextActive ? nextActive : prev));
-  }, [stableSectionIds]);
-
-  const getSectionBounds = useCallback((): InternalSectionBounds[] => {
-    const container = containerElement;
-    const scrollTop = container ? container.scrollTop : window.scrollY;
-    const containerTop = container ? container.getBoundingClientRect().top : 0;
-
-    return stableSectionIds
-      .map((id) => {
-        const el = refs.current[id];
-        if (!el) return null;
-        const rect = el.getBoundingClientRect();
-        const relativeTop = container
-          ? rect.top - containerTop + scrollTop
-          : rect.top + window.scrollY;
-        return {
-          id,
-          top: relativeTop,
-          bottom: relativeTop + rect.height,
-          height: rect.height,
-        };
-      })
-      .filter((bounds): bounds is InternalSectionBounds => bounds !== null);
-  }, [stableSectionIds, containerElement]);
-
   const calculateActiveSection = useCallback(() => {
-    if (isProgrammaticScrolling.current) return;
-
     const container = containerElement;
     const currentActiveId = activeIdRef.current;
     const now = Date.now();
     const scrollY = container ? container.scrollTop : window.scrollY;
-    const viewportHeight = container
-      ? container.clientHeight
-      : window.innerHeight;
+    const viewportHeight = container ? container.clientHeight : window.innerHeight;
     const scrollHeight = container
       ? container.scrollHeight
       : document.documentElement.scrollHeight;
@@ -424,124 +359,67 @@ export function useDomet(
     lastScrollY.current = scrollY;
     lastScrollTime.current = now;
 
-    const sectionBounds = getSectionBounds();
+    const currentSections = getCurrentSections();
+    const sectionBounds = getSectionBounds(currentSections, container);
     if (sectionBounds.length === 0) return;
 
-    const baseOffset = getEffectiveOffset();
-    const effectiveOffset = Math.max(baseOffset, viewportHeight * offsetRatio);
-    const triggerLine = scrollY + effectiveOffset;
-    const viewportTop = scrollY;
-    const viewportBottom = scrollY + viewportHeight;
+    const effectiveOffset = resolveOffset(offset, viewportHeight, DEFAULT_OFFSET);
 
-    const scores: SectionScore[] = sectionBounds.map((section) => {
-      const visibleTop = Math.max(section.top, viewportTop);
-      const visibleBottom = Math.min(section.bottom, viewportBottom);
-      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-      const visibilityRatio =
-        section.height > 0 ? visibleHeight / section.height : 0;
-      const visibleInViewportRatio =
-        viewportHeight > 0 ? visibleHeight / viewportHeight : 0;
-      const isInViewport =
-        section.bottom > viewportTop && section.top < viewportBottom;
-
-      const sectionProgress = (() => {
-        if (section.height === 0) return 0;
-        const entryPoint = viewportBottom;
-        const _exitPoint = viewportTop;
-        const totalTravel = viewportHeight + section.height;
-        const traveled = entryPoint - section.top;
-        return Math.max(0, Math.min(1, traveled / totalTravel));
-      })();
-
-      let score = 0;
-
-      if (visibilityRatio >= visibilityThreshold) {
-        score += 1000 + visibilityRatio * 500;
-      } else if (isInViewport) {
-        score += visibleInViewportRatio * 800;
-      }
-
-      const sectionIndex = sectionIndexMap.get(section.id) ?? 0;
-      if (
-        scrollDirection &&
-        isInViewport &&
-        section.top <= triggerLine &&
-        section.bottom > triggerLine
-      ) {
-        score += 200;
-      }
-
-      score -= sectionIndex * 0.1;
-
-      return {
-        id: section.id,
-        score,
-        visibilityRatio,
-        isInViewport,
-        bounds: section,
-        progress: sectionProgress,
-      };
+    const scores = calculateSectionScores(sectionBounds, currentSections, {
+      scrollY,
+      viewportHeight,
+      scrollHeight,
+      effectiveOffset,
+      visibilityThreshold: threshold,
+      scrollDirection,
+      sectionIndexMap,
     });
 
-    const hasScroll = maxScroll > 10;
-    const isAtBottom =
-      hasScroll && scrollY + viewportHeight >= scrollHeight - 5;
-    const isAtTop = hasScroll && scrollY <= 5;
+    const isProgrammatic = isProgrammaticScrolling.current;
 
-    let newActiveId: string | null = null;
+    const newActiveId = isProgrammatic
+      ? currentActiveId
+      : determineActiveSection(
+          scores,
+          sectionIds,
+          currentActiveId,
+          hysteresis,
+          scrollY,
+          viewportHeight,
+          scrollHeight,
+        );
 
-    if (isAtBottom && stableSectionIds.length > 0) {
-      newActiveId = stableSectionIds[stableSectionIds.length - 1];
-    } else if (isAtTop && stableSectionIds.length > 0) {
-      newActiveId = stableSectionIds[0];
-    } else {
-      const visibleScores = scores.filter((s) => s.isInViewport);
-      const candidates = visibleScores.length > 0 ? visibleScores : scores;
-      candidates.sort((a, b) => b.score - a.score);
-
-      if (candidates.length > 0) {
-        const bestCandidate = candidates[0];
-        const currentScore = scores.find((s) => s.id === currentActiveId);
-
-        const shouldSwitch =
-          !currentScore ||
-          !currentScore.isInViewport ||
-          bestCandidate.score > currentScore.score + hysteresisMargin ||
-          bestCandidate.id === currentActiveId;
-
-        newActiveId = shouldSwitch ? bestCandidate.id : currentActiveId;
-      }
-    }
-
-    if (newActiveId !== currentActiveId) {
+    if (!isProgrammatic && newActiveId !== currentActiveId) {
       activeIdRef.current = newActiveId;
       setActiveId(newActiveId);
-      callbackRefs.current.onActiveChange?.(newActiveId, currentActiveId);
+      callbackRefs.current.onActive?.(newActiveId, currentActiveId);
     }
 
-    const currentInViewport = new Set(
-      scores.filter((s) => s.isInViewport).map((s) => s.id),
-    );
-    const prevInViewport = prevSectionsInViewport.current;
+    if (!isProgrammatic) {
+      const currentInViewport = new Set(
+        scores.filter((s) => s.inView).map((s) => s.id),
+      );
+      const prevInViewport = prevSectionsInViewport.current;
 
-    for (const id of currentInViewport) {
-      if (!prevInViewport.has(id)) {
-        callbackRefs.current.onSectionEnter?.(id);
+      for (const id of currentInViewport) {
+        if (!prevInViewport.has(id)) {
+          callbackRefs.current.onEnter?.(id);
+        }
       }
-    }
-    for (const id of prevInViewport) {
-      if (!currentInViewport.has(id)) {
-        callbackRefs.current.onSectionLeave?.(id);
+      for (const id of prevInViewport) {
+        if (!currentInViewport.has(id)) {
+          callbackRefs.current.onLeave?.(id);
+        }
       }
+      prevSectionsInViewport.current = currentInViewport;
     }
-    prevSectionsInViewport.current = currentInViewport;
 
     const newScrollState: ScrollState = {
       y: scrollY,
       progress: Math.max(0, Math.min(1, scrollProgress)),
       direction: scrollDirection,
       velocity,
-      isScrolling: isScrollingRef.current,
+      scrolling: isScrollingRef.current,
       maxScroll,
       viewportHeight,
       offset: effectiveOffset,
@@ -557,22 +435,22 @@ export function useDomet(
         },
         visibility: Math.round(s.visibilityRatio * 100) / 100,
         progress: Math.round(s.progress * 100) / 100,
-        isInViewport: s.isInViewport,
-        isActive: s.id === newActiveId,
+        inView: s.inView,
+        active: s.id === (isProgrammatic ? currentActiveId : newActiveId),
+        rect: s.rect,
       };
     }
 
     setScroll(newScrollState);
     setSections(newSections);
   }, [
-    stableSectionIds,
+    sectionIds,
     sectionIndexMap,
-    getEffectiveOffset,
-    offsetRatio,
-    visibilityThreshold,
-    hysteresisMargin,
-    getSectionBounds,
+    offset,
+    threshold,
+    hysteresis,
     containerElement,
+    getCurrentSections,
   ]);
 
   recalculateRef.current = calculateActiveSection;
@@ -594,24 +472,21 @@ export function useDomet(
 
     const handleScrollEnd = (): void => {
       isScrollingRef.current = false;
-      setScroll((prev) => ({ ...prev, isScrolling: false }));
+      setScroll((prev) => ({ ...prev, scrolling: false }));
       callbackRefs.current.onScrollEnd?.();
     };
 
     const handleScroll = (): void => {
       if (!isScrollingRef.current) {
         isScrollingRef.current = true;
-        setScroll((prev) => ({ ...prev, isScrolling: true }));
+        setScroll((prev) => ({ ...prev, scrolling: true }));
         callbackRefs.current.onScrollStart?.();
       }
 
       if (scrollIdleTimeoutRef.current) {
         clearTimeout(scrollIdleTimeoutRef.current);
       }
-      scrollIdleTimeoutRef.current = setTimeout(
-        handleScrollEnd,
-        SCROLL_IDLE_MS,
-      );
+      scrollIdleTimeoutRef.current = setTimeout(handleScrollEnd, SCROLL_IDLE_MS);
 
       if (isThrottled.current) {
         hasPendingScroll.current = true;
@@ -635,10 +510,14 @@ export function useDomet(
           hasPendingScroll.current = false;
           handleScroll();
         }
-      }, debounceMs);
+      }, throttle);
     };
 
     const handleResize = (): void => {
+      if (useSelector && selectorString) {
+        const resolved = resolveSectionsFromSelector(selectorString);
+        setResolvedSections(resolved);
+      }
       scheduleCalculate();
     };
 
@@ -677,22 +556,24 @@ export function useDomet(
       isProgrammaticScrolling.current = false;
       isScrollingRef.current = false;
     };
-  }, [calculateActiveSection, debounceMs, containerElement]);
+  }, [calculateActiveSection, throttle, containerElement, useSelector, selectorString]);
 
-  const activeIndex = useMemo(() => {
+  const index = useMemo(() => {
     if (!activeId) return -1;
     return sectionIndexMap.get(activeId) ?? -1;
   }, [activeId, sectionIndexMap]);
 
   return {
-    activeId,
-    activeIndex,
+    active: activeId,
+    index,
+    progress: scroll.progress,
+    direction: scroll.direction,
     scroll,
     sections,
-    registerRef,
-    scrollToSection,
-    sectionProps,
-    navProps,
+    ids: sectionIds,
+    scrollTo,
+    register,
+    link,
   };
 }
 

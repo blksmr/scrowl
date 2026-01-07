@@ -34,24 +34,24 @@ const SECTIONS = [
 const SECTION_IDS = SECTIONS.map((s) => s.id);
 
 export function Basic() {
-  const { sectionProps, navProps, scroll, sections } = useDomet(
-    SECTION_IDS,
-    null,
-  );
+  const { register, link, scroll, sections } = useDomet({
+    ids: SECTION_IDS,
+  });
 
   const { getIndicatorStyle } = useNavProgress(SECTION_IDS, scroll, sections);
 
   return (
     <div className="relative min-h-screen bg-white">
       <nav className="fixed right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-end gap-3">
-        {SECTIONS.map(({ id }) => (
+        {SECTIONS.map(({ id, label }) => (
           <button
             key={id}
-            {...navProps(id)}
+            {...link(id)}
+            aria-label={`Go to ${label}`}
             className="group flex items-center gap-3"
           >
             <span
-              className="block h-0.5 rounded-full bg-black transition-[opacity] will-change-opacity ease-out group-hover:opacity-70"
+              className="block h-0.5 rounded-full bg-black transition-opacity will-change-[opacity] ease-out group-hover:opacity-70"
               style={getIndicatorStyle(id)}
             />
           </button>
@@ -62,9 +62,8 @@ export function Basic() {
         {SECTIONS.map(({ id, label, caption, color }, index) => (
           <section
             key={id}
-            {...sectionProps(id)}
-            className="flex items-center justify-center p-12 relative flex-col gap-2"
-            style={{ minHeight: "100vh" }}
+            {...register(id)}
+            className="flex items-center justify-center p-12 relative flex-col gap-2 min-h-screen"
           >
             <div className="relative pointer-events-none select-none w-full max-w-[500px] overflow-hidden rounded-lg aspect-[3/2]">
               <div
@@ -75,6 +74,7 @@ export function Basic() {
                   src={`/images/${id}.jpg`}
                   alt={label}
                   fill
+                  sizes="(max-width: 500px) 100vw, 500px"
                   priority={index === 0}
                   onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
                   className="object-cover opacity-0 transition-opacity duration-500 ease-out"

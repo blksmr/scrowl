@@ -191,7 +191,7 @@ function App() {
   selector: '[data-section]',
 
   container: containerRef,    // Custom scroll container
-  offset: 100,                // Trigger line offset (px or %)
+  triggerOffset: 100,         // Trigger line offset (px or %)
   threshold: 0.6,             // Visibility threshold
   hysteresis: 150,            // Score margin to resist switching
   behavior: 'smooth',         // Scroll behavior
@@ -413,7 +413,7 @@ export function TreeView() {
 
   const { active, progress, direction, register, scrollTo, sections } = useDomet({
     ids: SECTION_IDS,
-    offset: "10%",
+    triggerOffset: "10%",
     hysteresis: 100,
   });
 

@@ -18,7 +18,7 @@ export function PropTable({ items }: PropTableProps) {
   return (
     <div className="mt-6 w-full overflow-x-auto rounded-lg border border-border -webkit-overflow-scrolling-touch">
       <table className="min-w-[600px] w-full md:table-fixed md:min-w-full">
-        <thead className="border-border border-b bg-gray text-left font-default text-default">
+        <thead className="border-border border-b bg-grey text-left font-default text-default">
           <tr>
             <th className={cn(cellPadding, "md:w-[200px] font-normal text-small text-xs min-w-[140px]")}>Property</th>
             <th className={cn(cellPadding, "font-normal text-small text-xs")}>Type</th>

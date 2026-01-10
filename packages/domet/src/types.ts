@@ -18,7 +18,7 @@ export type ScrollState = {
   scrolling: boolean;
   maxScroll: number;
   viewportHeight: number;
-  offset: number;
+  triggerOffset: number;
   triggerLine: number;
 };
 
@@ -51,11 +51,12 @@ export type DometOptions = {
   ids: string[];
   selector?: never;
   container?: ScrollContainer;
-  offset?: Offset;
+  triggerOffset?: Offset;
   throttle?: number;
   threshold?: number;
   hysteresis?: number;
   behavior?: ScrollBehavior;
+  scrollTo?: ScrollToOptions;
   onActive?: (id: string | null, prevId: string | null) => void;
   onEnter?: (id: string) => void;
   onLeave?: (id: string) => void;
@@ -65,11 +66,12 @@ export type DometOptions = {
   ids?: never;
   selector: string;
   container?: ScrollContainer;
-  offset?: Offset;
+  triggerOffset?: Offset;
   throttle?: number;
   threshold?: number;
   hysteresis?: number;
   behavior?: ScrollBehavior;
+  scrollTo?: ScrollToOptions;
   onActive?: (id: string | null, prevId: string | null) => void;
   onEnter?: (id: string) => void;
   onLeave?: (id: string) => void;
@@ -99,7 +101,7 @@ export type UseDometReturn = {
   ids: string[];
   scrollTo: (target: ScrollTarget, options?: ScrollToOptions) => void;
   register: (id: string) => RegisterProps;
-  link: (id: string) => LinkProps;
+  link: (id: string, options?: ScrollToOptions) => LinkProps;
 };
 
 export type ResolvedSection = {

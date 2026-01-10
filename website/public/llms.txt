@@ -55,11 +55,16 @@ function Page() {
 | `ids` | `string[]` | — | Array of section IDs to track (mutually exclusive with selector) |
 | `selector` | `string` | — | CSS selector to find sections (mutually exclusive with ids) |
 | `container` | `RefObject<HTMLElement \| null>` | `undefined` | React ref to scrollable container (defaults to window) |
-| `offset` | `number \| \`${number}%\`` | `"8%"` | Trigger offset from top (pixels or viewport percentage) |
+| `triggerOffset` | `number \| \`${number}%\`` | `0` | Tracking offset from top used for the trigger line |
 | `throttle` | `number` | `10` | Throttle delay in milliseconds |
 | `threshold` | `number` | `0.6` | Minimum visibility ratio (0-1) for section to get priority |
 | `hysteresis` | `number` | `150` | Score margin to prevent rapid section switching |
-| `behavior` | `'smooth' \| 'instant' \| 'auto'` | `'auto'` | Scroll behavior. 'auto' respects prefers-reduced-motion |
+| `behavior` | `'smooth' \| 'instant' \| 'auto'` | `'auto'` | Scroll behavior. 'auto' respects prefers-reduced-motion and falls back to 'smooth' |
+| `scrollTo` | `ScrollToOptions` | `undefined` | Default options for scrollTo/link (position, offset, behavior, lockActive) |
+
+`triggerOffset` affects tracking (active section + trigger line). `scrollTo.offset` only shifts programmatic scroll targets and defaults to `0`.
+
+IDs are sanitized: non-strings, empty values, and duplicates are ignored.
 
 ### Callbacks
 
@@ -70,6 +75,8 @@ function Page() {
 | `onLeave` | `(id: string) => void` | Called when a section leaves the viewport |
 | `onScrollStart` | `() => void` | Called when scrolling starts |
 | `onScrollEnd` | `() => void` | Called when scrolling stops |
+
+Callbacks do not fire while `lockActive` is enabled during programmatic scroll.
 
 ### Return Value
 
@@ -83,7 +90,7 @@ function Page() {
 | `scroll` | `ScrollState` | Full scroll state object |
 | `sections` | `Record<string, SectionState>` | Per-section state indexed by ID |
 | `register` | `(id: string) => RegisterProps` | Props to spread on section elements (includes id, ref, data-domet) |
-| `link` | `(id: string) => LinkProps` | Props to spread on nav items |
+| `link` | `(id: string, options?: ScrollToOptions) => LinkProps` | Nav props (onClick, aria-current, data-active) with optional scroll overrides |
 | `scrollTo` | `(target: ScrollTarget, options?: ScrollToOptions) => void` | Programmatically scroll to a section or absolute scroll position |
 
 ### Types
@@ -101,14 +108,14 @@ type ScrollState = {
   scrolling: boolean               // True while actively scrolling
   maxScroll: number                // Maximum scroll value
   viewportHeight: number           // Viewport height in pixels
-  offset: number                   // Effective trigger offset
+  triggerOffset: number            // Effective trigger offset
   triggerLine: number              // Dynamic trigger line position in viewport
 }
 ```
 
 ### SectionState
 
-Per-section state available for each tracked section.
+Per-section state available for each tracked section. `visibility` and `progress` are rounded to 2 decimals.
 
 ```ts showLineNumbers
 type SectionState = {
@@ -135,21 +142,23 @@ Target input for programmatic scrolling.
 type ScrollTarget =
   | string
   | { id: string }
-  | { top: number }  // Absolute scroll position in px (offset is subtracted)
+  | { top: number }  // Absolute scroll position in px (scrollTo.offset is subtracted)
 ```
 
 ### ScrollToOptions
 
-Options for programmatic scrolling.
+Options for programmatic scrolling. Use `scrollTo` in the hook options for defaults, and pass overrides to `link` or `scrollTo`.
 
 ```ts showLineNumbers
 type ScrollToOptions = {
-  offset?: number | `${number}%`            // Override trigger offset (applies to id/top targets)
+  offset?: number | `${number}%`            // Override scroll target offset (applies to id/top targets)
   behavior?: 'smooth' | 'instant' | 'auto'  // Override scroll behavior
   position?: 'top' | 'center' | 'bottom'    // Section alignment for ID targets only
   lockActive?: boolean                      // Lock active section during programmatic scroll
 }
 ```
+
+By default, `lockActive` is enabled for id targets and disabled for `{ top }`.
 
 ### Examples
 
@@ -185,6 +194,20 @@ const { progress, sections, ids } = useDomet({
 {ids.map(id => (
   <div style={{ opacity: sections[id]?.visibility }} />
 ))}
+```
+
+### Default Scroll Options
+
+Define default scroll behavior for links and override per click:
+
+```tsx showLineNumbers
+const { link } = useDomet({
+  ids: ['intro', 'details'],
+  scrollTo: { position: 'top', behavior: 'smooth' },
+})
+
+<button {...link('intro')}>Intro</button>
+<button {...link('details', { behavior: 'instant', offset: 100 })}>Details</button>
 ```
 
 ### Custom Container

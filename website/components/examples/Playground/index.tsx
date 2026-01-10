@@ -122,7 +122,7 @@ export function Playground() {
       ? {
           ids: sectionIds,
           container: containerRef,
-          offset: parsedOffset,
+          triggerOffset: parsedOffset,
           threshold,
           hysteresis,
           behavior: scrollBehavior,
@@ -136,7 +136,7 @@ export function Playground() {
       : {
           selector: "[data-playground-section]",
           container: containerRef,
-          offset: parsedOffset,
+          triggerOffset: parsedOffset,
           threshold,
           hysteresis,
           behavior: scrollBehavior,
@@ -307,7 +307,7 @@ export function Playground() {
             </div>
 
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Offset</label>
+              <label className="block text-xs text-zinc-500 mb-1">Trigger Offset</label>
               <input
                 type="text"
                 value={offset}

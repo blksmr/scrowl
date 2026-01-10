@@ -40,7 +40,11 @@
     "./resolvers": {},
     "./scoring": {},
     "./types": {},
-    "./validation": {}
+    "./validation": {},
+    "./utils": {},
+    "./utils/resolvers": {},
+    "./utils/scoring": {},
+    "./utils/validation": {}
   },
   "files": [
     "dist"

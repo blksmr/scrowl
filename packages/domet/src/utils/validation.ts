@@ -1,10 +1,10 @@
-import type { Offset } from "./types";
+import type { Offset } from "../types";
 import {
   DEFAULT_OFFSET,
   DEFAULT_THRESHOLD,
   DEFAULT_HYSTERESIS,
   DEFAULT_THROTTLE,
-} from "./constants";
+} from "../constants";
 
 const PERCENT_REGEX = /^(-?\d+(?:\.\d+)?)%$/;
 

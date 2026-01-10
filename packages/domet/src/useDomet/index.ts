@@ -19,30 +19,26 @@ import type {
   ScrollToPosition,
   SectionState,
   UseDometReturn,
-} from "./types";
+} from "../types";
 import {
   DEFAULT_OFFSET,
   SCROLL_IDLE_MS,
-} from "./constants";
+} from "../constants";
 import {
   resolveContainer,
   resolveSectionsFromIds,
   resolveSectionsFromSelector,
   resolveOffset,
-} from "./resolvers";
-import {
   getSectionBounds,
   calculateSectionScores,
   determineActiveSection,
-} from "./scoring";
-import {
   sanitizeOffset,
   sanitizeThreshold,
   sanitizeHysteresis,
   sanitizeThrottle,
   sanitizeIds,
   sanitizeSelector,
-} from "./validation";
+} from "../utils";
 
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -199,6 +195,16 @@ export function useDomet(options: DometOptions): UseDometReturn {
   const scrollIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevSectionsInViewport = useRef<Set<string>>(new Set());
   const recalculateRef = useRef<() => void>(() => {});
+  const scheduleRecalculate = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (rafId.current) {
+      cancelAnimationFrame(rafId.current);
+    }
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      recalculateRef.current();
+    });
+  }, []);
   const scrollCleanupRef = useRef<(() => void) | null>(null);
   const mutationObserverRef = useRef<MutationObserver | null>(null);
   const mutationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -238,12 +244,39 @@ export function useDomet(options: DometOptions): UseDometReturn {
     return map;
   }, [sectionIds]);
 
+  const containerRefCurrent = containerInput?.current ?? null;
+
   useIsomorphicLayoutEffect(() => {
     const resolved = resolveContainer(containerInput);
     if (resolved !== containerElement) {
       setContainerElement(resolved);
     }
-  }, [containerInput]);
+  }, [containerInput, containerRefCurrent]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!containerInput || containerRefCurrent !== null) return;
+    const nextActive = initialActiveId;
+    if (activeIdRef.current !== nextActive) {
+      activeIdRef.current = nextActive;
+      setActiveId(nextActive);
+    }
+    setSections({});
+    prevSectionsInViewport.current = new Set();
+    lastScrollY.current = 0;
+    lastScrollTime.current = Date.now();
+    isScrollingRef.current = false;
+    setScroll((prev) => ({
+      ...prev,
+      y: 0,
+      progress: 0,
+      direction: null,
+      velocity: 0,
+      scrolling: false,
+      maxScroll: 0,
+      viewportHeight: 0,
+      triggerLine: prev.offset,
+    }));
+  }, [containerInput, containerRefCurrent, initialActiveId]);
 
   const updateSectionsFromSelector = useCallback((selector: string) => {
     const resolved = resolveSectionsFromSelector(selector);
@@ -344,11 +377,12 @@ export function useDomet(options: DometOptions): UseDometReturn {
       } else {
         delete refs.current[id];
       }
+      scheduleRecalculate();
     };
 
     refCallbacks.current[id] = callback;
     return callback;
-  }, []);
+  }, [scheduleRecalculate]);
 
   const getResolvedBehavior = useCallback((behaviorOverride?: ScrollBehavior): ScrollBehavior => {
     const b = behaviorOverride ?? optionsRef.current.behavior;
@@ -740,17 +774,6 @@ export function useDomet(options: DometOptions): UseDometReturn {
     const container = containerElement;
     const scrollTarget = container || window;
 
-    const scheduleCalculate = (): void => {
-      if (rafId.current) {
-        cancelAnimationFrame(rafId.current);
-      }
-
-      rafId.current = requestAnimationFrame(() => {
-        rafId.current = null;
-        recalculateRef.current();
-      });
-    };
-
     const handleScrollEnd = (): void => {
       isScrollingRef.current = false;
       setScroll((prev) => ({ ...prev, scrolling: false }));
@@ -781,7 +804,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
         clearTimeout(throttleTimeoutId.current);
       }
 
-      scheduleCalculate();
+      scheduleRecalculate();
 
       throttleTimeoutId.current = setTimeout(() => {
         isThrottled.current = false;
@@ -798,11 +821,11 @@ export function useDomet(options: DometOptions): UseDometReturn {
       if (useSelector && selectorString) {
         updateSectionsFromSelector(selectorString);
       }
-      scheduleCalculate();
+      scheduleRecalculate();
     };
 
     const deferredRecalcId = setTimeout(() => {
-      recalculateRef.current();
+      scheduleRecalculate();
     }, 0);
 
     scrollTarget.addEventListener("scroll", handleScroll, { passive: true });
@@ -830,7 +853,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
       isProgrammaticScrolling.current = false;
       isScrollingRef.current = false;
     };
-  }, [throttle, containerElement, useSelector, selectorString, updateSectionsFromSelector]);
+  }, [throttle, containerElement, useSelector, selectorString, updateSectionsFromSelector, scheduleRecalculate]);
 
   const index = useMemo(() => {
     if (!activeId) return -1;

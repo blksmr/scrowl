@@ -11,7 +11,7 @@
     --background-secondary: oklch(0.9821 0 0);
     --primary: #8dc8e8;
     --border: oklch(0.93 0 0);
-    --gray: oklch(0.98 0 0);
+    --grey: oklch(0.98 0 0);
   }
 
   * {
@@ -55,7 +55,7 @@
     h4,
     h5,
     h6 {
-      @apply mt-12;
+      @apply [&:not(:first-child)]:mt-12;
     }
 
     h1 + h2,

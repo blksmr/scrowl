@@ -2,8 +2,8 @@ import type {
   InternalSectionBounds,
   SectionScore,
   ResolvedSection,
-} from "./types";
-import { MIN_SCROLL_THRESHOLD, EDGE_TOLERANCE } from "./constants";
+} from "../types";
+import { MIN_SCROLL_THRESHOLD, EDGE_TOLERANCE } from "../constants";
 
 export type ScoringContext = {
   scrollY: number;

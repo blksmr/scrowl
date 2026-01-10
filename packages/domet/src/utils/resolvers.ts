@@ -1,4 +1,4 @@
-import type { ScrollContainer, ResolvedSection, Offset } from "./types";
+import type { ScrollContainer, ResolvedSection, Offset } from "../types";
 
 const PERCENT_REGEX = /^(-?\d+(?:\.\d+)?)%$/;
 

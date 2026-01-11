@@ -15,7 +15,7 @@ const SECTION_IDS = SECTIONS.map((s) => s.id);
 export function Reveal() {
   const { sections, register } = useDomet({
     ids: SECTION_IDS,
-    threshold: 0.3,
+    tracking: { threshold: 0.3 },
   });
 
   return (

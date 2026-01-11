@@ -49,13 +49,8 @@
       @apply font-medium;
     }
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      @apply [&:not(:first-child)]:mt-12;
+    :where(h1, h2, h3, h4, h5, h6):not(:first-child):not(:last-child):not(:where(h1, h2, h3, h4, h5, h6) + :where(h1, h2, h3, h4, h5, h6)) {
+      @apply mt-12;
     }
 
     h1 + h2,
@@ -78,6 +73,15 @@
 
     p {
       @apply mt-1 leading-6;
+    }
+
+    .shiki + p,
+    code + p,
+    kbd + p,
+    pre + p,
+    samp + p,
+    [data-type="table"] + p {
+      @apply mt-4;
     }
 
     p + p:has(+ p) {

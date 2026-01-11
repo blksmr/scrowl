@@ -122,10 +122,8 @@ export function Playground() {
       ? {
           ids: sectionIds,
           container: containerRef,
-          triggerOffset: parsedOffset,
-          threshold,
-          hysteresis,
-          behavior: scrollBehavior,
+          tracking: { offset: parsedOffset, threshold, hysteresis },
+          scrolling: { behavior: scrollBehavior },
           onActive: (id, prevId) =>
             addLog("active", `${prevId} → ${id} (${getScrollInfo()})`),
           onEnter: (id) => addLog("enter", `${id}`),
@@ -136,10 +134,8 @@ export function Playground() {
       : {
           selector: "[data-playground-section]",
           container: containerRef,
-          triggerOffset: parsedOffset,
-          threshold,
-          hysteresis,
-          behavior: scrollBehavior,
+          tracking: { offset: parsedOffset, threshold, hysteresis },
+          scrolling: { behavior: scrollBehavior },
           onActive: (id, prevId) =>
             addLog("active", `${prevId} → ${id} (${getScrollInfo()})`),
           onEnter: (id) => addLog("enter", `${id}`),
@@ -307,7 +303,7 @@ export function Playground() {
             </div>
 
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Trigger Offset</label>
+              <label className="block text-xs text-zinc-500 mb-1">Tracking Offset</label>
               <input
                 type="text"
                 value={offset}

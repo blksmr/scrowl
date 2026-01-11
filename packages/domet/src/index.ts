@@ -11,8 +11,10 @@ export type {
   ScrollTarget,
   ScrollToOptions,
   ScrollToPosition,
+  ScrollingOptions,
   SectionBounds,
   SectionState,
+  TrackingOptions,
   UseDometReturn,
 } from "./types";
 export { default, useDomet } from "./useDomet";

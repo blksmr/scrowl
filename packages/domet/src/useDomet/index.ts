@@ -119,7 +119,8 @@ function areIdInputsEqual(a: unknown, b: unknown): boolean {
 export function useDomet(options: DometOptions): UseDometReturn {
   const {
     container: containerInput,
-    behavior = "auto",
+    tracking,
+    scrolling,
     onActive,
     onEnter,
     onLeave,
@@ -127,20 +128,29 @@ export function useDomet(options: DometOptions): UseDometReturn {
     onScrollEnd,
   } = options;
 
-  const triggerOffset = sanitizeOffset(options.triggerOffset);
-  const throttle = sanitizeThrottle(options.throttle);
-  const threshold = sanitizeThreshold(options.threshold);
-  const hysteresis = sanitizeHysteresis(options.hysteresis);
-  const scrollToDefaults = useMemo(() => {
-    const defaults = options.scrollTo;
-    if (!defaults) return undefined;
+  const trackingOffset = sanitizeOffset(tracking?.offset);
+  const throttle = sanitizeThrottle(tracking?.throttle);
+  const threshold = sanitizeThreshold(tracking?.threshold);
+  const hysteresis = sanitizeHysteresis(tracking?.hysteresis);
+  const scrollingDefaults = useMemo(() => {
+    if (!scrolling) {
+      return {
+        behavior: "auto" as ScrollBehavior,
+        offset: undefined,
+        position: undefined,
+        lockActive: undefined,
+      };
+    }
+
     return {
-      ...defaults,
-      offset: defaults.offset !== undefined
-        ? sanitizeOffset(defaults.offset)
+      behavior: scrolling.behavior ?? "auto",
+      offset: scrolling.offset !== undefined
+        ? sanitizeOffset(scrolling.offset)
         : undefined,
+      position: scrolling.position,
+      lockActive: scrolling.lockActive,
     };
-  }, [options.scrollTo]);
+  }, [scrolling]);
 
   const rawIds = "ids" in options ? options.ids : undefined;
   const rawSelector = "selector" in options ? options.selector : undefined;
@@ -185,7 +195,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
     scrolling: false,
     maxScroll: 0,
     viewportHeight: 0,
-    triggerOffset: 0,
+    trackingOffset: 0,
     triggerLine: 0,
   });
   const [sections, setSections] = useState<Record<string, SectionState>>({});
@@ -218,7 +228,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
   const scrollCleanupRef = useRef<(() => void) | null>(null);
   const mutationObserverRef = useRef<MutationObserver | null>(null);
   const mutationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const optionsRef = useRef({ triggerOffset, behavior, scrollTo: scrollToDefaults });
+  const optionsRef = useRef({ trackingOffset, scrolling: scrollingDefaults });
   const callbackRefs = useRef({
     onActive,
     onEnter,
@@ -228,8 +238,8 @@ export function useDomet(options: DometOptions): UseDometReturn {
   });
 
   useIsomorphicLayoutEffect(() => {
-    optionsRef.current = { triggerOffset, behavior, scrollTo: scrollToDefaults };
-  }, [triggerOffset, behavior, scrollToDefaults]);
+    optionsRef.current = { trackingOffset, scrolling: scrollingDefaults };
+  }, [trackingOffset, scrollingDefaults]);
 
   useIsomorphicLayoutEffect(() => {
     callbackRefs.current = {
@@ -370,7 +380,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
   }, [scheduleRecalculate]);
 
   const getResolvedBehavior = useCallback((behaviorOverride?: ScrollBehavior): ScrollBehavior => {
-    const b = behaviorOverride ?? optionsRef.current.behavior;
+    const b = behaviorOverride ?? optionsRef.current.scrolling.behavior;
     if (b === "auto") {
       if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
         return "smooth";
@@ -398,9 +408,9 @@ export function useDomet(options: DometOptions): UseDometReturn {
           ? { type: "id" as const, id: target.id }
           : { type: "top" as const, top: target.top };
 
-      const defaultScrollTo = optionsRef.current.scrollTo;
+      const defaultScroll = optionsRef.current.scrolling;
       const lockActive = scrollOptions?.lockActive
-        ?? defaultScrollTo?.lockActive
+        ?? defaultScroll.lockActive
         ?? resolvedTarget.type === "id";
       const container = containerElement;
       const scrollTarget = container || window;
@@ -410,10 +420,10 @@ export function useDomet(options: DometOptions): UseDometReturn {
         : document.documentElement.scrollHeight;
       const maxScroll = Math.max(0, scrollHeight - viewportHeight);
       const scrollBehavior = getResolvedBehavior(
-        scrollOptions?.behavior ?? defaultScrollTo?.behavior,
+        scrollOptions?.behavior ?? defaultScroll.behavior,
       );
       const offsetCandidate = scrollOptions?.offset
-        ?? defaultScrollTo?.offset;
+        ?? defaultScroll.offset;
       const offsetValue = sanitizeOffset(offsetCandidate);
       const effectiveOffset = resolveOffset(offsetValue, viewportHeight, DEFAULT_OFFSET);
 
@@ -515,7 +525,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
         const elementRect = section.element.getBoundingClientRect();
 
         const position: ScrollToPosition | undefined =
-          scrollOptions?.position ?? defaultScrollTo?.position;
+          scrollOptions?.position ?? defaultScroll.position;
 
         const sectionTop = container
           ? elementRect.top - container.getBoundingClientRect().top + container.scrollTop
@@ -665,7 +675,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
     const sectionBounds = getSectionBounds(currentSections, container);
     if (sectionBounds.length === 0) return;
 
-    const effectiveOffset = resolveOffset(triggerOffset, viewportHeight, DEFAULT_OFFSET);
+    const effectiveOffset = resolveOffset(trackingOffset, viewportHeight, DEFAULT_OFFSET);
 
     const scores = calculateSectionScores(sectionBounds, currentSections, {
       scrollY,
@@ -727,7 +737,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
       scrolling: isScrollingRef.current,
       maxScroll,
       viewportHeight,
-      triggerOffset: effectiveOffset,
+      trackingOffset: effectiveOffset,
       triggerLine,
     };
 
@@ -752,7 +762,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
   }, [
     sectionIds,
     sectionIndexMap,
-    triggerOffset,
+    trackingOffset,
     threshold,
     hysteresis,
     containerElement,

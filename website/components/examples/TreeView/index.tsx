@@ -191,11 +191,17 @@ function App() {
   selector: '[data-section]',
 
   container: containerRef,    // Custom scroll container
-  triggerOffset: 100,         // Trigger line offset (px or %)
-  threshold: 0.6,             // Visibility threshold
-  hysteresis: 150,            // Score margin to resist switching
-  behavior: 'smooth',         // Scroll behavior
-  throttle: 10,               // Update throttle (ms)
+
+  tracking: {
+    offset: 100,              // Trigger line offset (px or %)
+    threshold: 0.6,           // Visibility threshold
+    hysteresis: 150,          // Score margin to resist switching
+    throttle: 10,             // Update throttle (ms)
+  },
+
+  scrolling: {
+    behavior: 'smooth',       // Scroll behavior
+  },
 
   onActive: (id, prevId) => {},
   onEnter: (id) => {},
@@ -413,8 +419,7 @@ export function TreeView() {
 
   const { active, progress, direction, register, scrollTo, sections } = useDomet({
     ids: SECTION_IDS,
-    triggerOffset: "10%",
-    hysteresis: 100,
+    tracking: { offset: "10%", hysteresis: 100 },
   });
 
   const handleToggleGroup = (id: string) => {

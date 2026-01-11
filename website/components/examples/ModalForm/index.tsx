@@ -23,8 +23,8 @@ function ModalFormContent({ onClose }: ModalFormContentProps) {
   const { active, scroll, sections, register, link } = useDomet({
     ids: SECTION_IDS,
     container: scrollContainerRef,
-    triggerOffset: 24,
-    scrollTo: { behavior: "smooth", position: "top" },
+    tracking: { offset: 24 },
+    scrolling: { behavior: "smooth", position: "top" },
   });
 
   return (

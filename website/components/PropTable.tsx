@@ -16,7 +16,7 @@ const cellPadding = "px-3 py-2"
 
 export function PropTable({ items }: PropTableProps) {
   return (
-    <div className="mt-6 w-full overflow-x-auto rounded-lg border border-border -webkit-overflow-scrolling-touch">
+    <div data-type="table" className="mt-6 w-full overflow-x-auto rounded-lg border border-border -webkit-overflow-scrolling-touch">
       <table className="min-w-[600px] w-full md:table-fixed md:min-w-full">
         <thead className="border-border border-b bg-grey text-left font-default text-default">
           <tr>

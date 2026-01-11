@@ -55,14 +55,10 @@ function Page() {
 | `ids` | `string[]` | — | Array of section IDs to track (mutually exclusive with selector) |
 | `selector` | `string` | — | CSS selector to find sections (mutually exclusive with ids) |
 | `container` | `RefObject<HTMLElement \| null>` | `undefined` | React ref to scrollable container (defaults to window) |
-| `triggerOffset` | `number \| \`${number}%\`` | `0` | Tracking offset from top used for the trigger line |
-| `throttle` | `number` | `10` | Throttle delay in milliseconds |
-| `threshold` | `number` | `0.6` | Minimum visibility ratio (0-1) for section to get priority |
-| `hysteresis` | `number` | `150` | Score margin to prevent rapid section switching |
-| `behavior` | `'smooth' \| 'instant' \| 'auto'` | `'auto'` | Scroll behavior. 'auto' respects prefers-reduced-motion and falls back to 'smooth' |
-| `scrollTo` | `ScrollToOptions` | `undefined` | Default options for scrollTo/link (position, offset, behavior, lockActive) |
+| `tracking` | `TrackingOptions` | `undefined` | Tracking configuration (offset, threshold, hysteresis, throttle) |
+| `scrolling` | `ScrollingOptions` | `undefined` | Default scroll behavior for link/scrollTo (behavior, offset, position, lockActive) |
 
-`triggerOffset` affects tracking (active section + trigger line). `scrollTo.offset` only shifts programmatic scroll targets and defaults to `0`.
+`tracking.offset` affects tracking (active section + trigger line). `scrolling.offset` only shifts programmatic scroll targets and defaults to `0`. Tracking defaults are `threshold: 0.6`, `hysteresis: 150`, and `throttle: 10` (ms). `scrolling.behavior` defaults to `auto`, which resolves to `smooth` unless `prefers-reduced-motion` is enabled (then `instant`).
 
 IDs are sanitized: non-strings, empty values, and duplicates are ignored.
 
@@ -76,7 +72,7 @@ IDs are sanitized: non-strings, empty values, and duplicates are ignored.
 | `onScrollStart` | `() => void` | Called when scrolling starts |
 | `onScrollEnd` | `() => void` | Called when scrolling stops |
 
-Callbacks do not fire while `lockActive` is enabled during programmatic scroll.
+Callbacks do not fire while `lockActive` is enabled during programmatic scroll. `onScrollEnd` fires after `100` ms of scroll inactivity.
 
 ### Return Value
 
@@ -95,6 +91,36 @@ Callbacks do not fire while `lockActive` is enabled during programmatic scroll.
 
 ### Types
 
+### TrackingOptions
+
+Options that control tracking behavior.
+
+```ts showLineNumbers
+type TrackingOptions = {
+  offset?: number | `${number}%`
+  threshold?: number
+  hysteresis?: number
+  throttle?: number
+}
+```
+
+Defaults: `threshold: 0.6`, `hysteresis: 150`, `throttle: 10` (ms).
+
+### ScrollingOptions
+
+Defaults for programmatic scrolling (link/scrollTo).
+
+```ts showLineNumbers
+type ScrollingOptions = {
+  behavior?: 'smooth' | 'instant' | 'auto'
+  offset?: number | `${number}%`
+  position?: 'top' | 'center' | 'bottom'
+  lockActive?: boolean
+}
+```
+
+If `position` is omitted for ID targets, Domet uses a dynamic alignment that keeps the trigger line within the section and prefers centering sections that fit in the viewport.
+
 ### ScrollState
 
 Global scroll information updated on every scroll event.
@@ -108,7 +134,7 @@ type ScrollState = {
   scrolling: boolean               // True while actively scrolling
   maxScroll: number                // Maximum scroll value
   viewportHeight: number           // Viewport height in pixels
-  triggerOffset: number            // Effective trigger offset
+  trackingOffset: number           // Effective tracking offset
   triggerLine: number              // Dynamic trigger line position in viewport
 }
 ```
@@ -142,12 +168,12 @@ Target input for programmatic scrolling.
 type ScrollTarget =
   | string
   | { id: string }
-  | { top: number }  // Absolute scroll position in px (scrollTo.offset is subtracted)
+  | { top: number }  // Absolute scroll position in px (scrolling.offset is subtracted)
 ```
 
 ### ScrollToOptions
 
-Options for programmatic scrolling. Use `scrollTo` in the hook options for defaults, and pass overrides to `link` or `scrollTo`.
+Options for programmatic scrolling. Use `scrolling` in the hook options for defaults, and pass overrides to `link` or `scrollTo`.
 
 ```ts showLineNumbers
 type ScrollToOptions = {
@@ -196,14 +222,14 @@ const { progress, sections, ids } = useDomet({
 ))}
 ```
 
-### Default Scroll Options
+### Default Scrolling Options
 
 Define default scroll behavior for links and override per click:
 
 ```tsx showLineNumbers
 const { link } = useDomet({
   ids: ['intro', 'details'],
-  scrollTo: { position: 'top', behavior: 'smooth' },
+  scrolling: { position: 'top', behavior: 'smooth' },
 })
 
 <button {...link('intro')}>Intro</button>
@@ -260,8 +286,10 @@ Adjust sensitivity and stability of section detection:
 ```tsx showLineNumbers
 useDomet({
   ids: ['intro', 'features'],
-  threshold: 0.8,    // Require 80% visibility
-  hysteresis: 200,   // More resistance to switching
+  tracking: {
+    threshold: 0.8,    // Require 80% visibility
+    hysteresis: 200,   // More resistance to switching
+  },
 })
 ```
 

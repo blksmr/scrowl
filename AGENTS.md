@@ -118,6 +118,6 @@ This file guides code agents in this repository.
 - Prefer targeted unit tests for any non-trivial logic.
 
 ## Quick Reminder
-- Always check rules in `CLAUDE.md`.
+- Always check rules in `AGENTS.md`.
 - Use `npm test -- useDomet.test.tsx` for an isolated test.
 - Keep user messages clear and in English.

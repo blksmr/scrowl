@@ -18,7 +18,7 @@ export type ScrollState = {
   scrolling: boolean;
   maxScroll: number;
   viewportHeight: number;
-  triggerOffset: number;
+  trackingOffset: number;
   triggerLine: number;
 };
 
@@ -47,16 +47,21 @@ export type ScrollToOptions = {
   lockActive?: boolean;
 };
 
+export type TrackingOptions = {
+  offset?: Offset;
+  threshold?: number;
+  hysteresis?: number;
+  throttle?: number;
+};
+
+export type ScrollingOptions = ScrollToOptions;
+
 export type DometOptions = {
   ids: string[];
   selector?: never;
   container?: ScrollContainer;
-  triggerOffset?: Offset;
-  throttle?: number;
-  threshold?: number;
-  hysteresis?: number;
-  behavior?: ScrollBehavior;
-  scrollTo?: ScrollToOptions;
+  tracking?: TrackingOptions;
+  scrolling?: ScrollingOptions;
   onActive?: (id: string | null, prevId: string | null) => void;
   onEnter?: (id: string) => void;
   onLeave?: (id: string) => void;
@@ -66,12 +71,8 @@ export type DometOptions = {
   ids?: never;
   selector: string;
   container?: ScrollContainer;
-  triggerOffset?: Offset;
-  throttle?: number;
-  threshold?: number;
-  hysteresis?: number;
-  behavior?: ScrollBehavior;
-  scrollTo?: ScrollToOptions;
+  tracking?: TrackingOptions;
+  scrolling?: ScrollingOptions;
   onActive?: (id: string | null, prevId: string | null) => void;
   onEnter?: (id: string) => void;
   onLeave?: (id: string) => void;

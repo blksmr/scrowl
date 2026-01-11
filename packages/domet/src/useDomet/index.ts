@@ -1,12 +1,11 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
+
 import type {
   DometOptions,
   LinkProps,
@@ -20,10 +19,12 @@ import type {
   SectionState,
   UseDometReturn,
 } from "../types";
+
 import {
   DEFAULT_OFFSET,
   SCROLL_IDLE_MS,
 } from "../constants";
+
 import {
   resolveContainer,
   resolveSectionsFromIds,
@@ -38,83 +39,10 @@ import {
   sanitizeThrottle,
   sanitizeIds,
   sanitizeSelector,
+  useIsomorphicLayoutEffect,
+  areIdInputsEqual,
 } from "../utils";
 
-const useIsomorphicLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-type ScrollSnapshot = {
-  scrollY: number;
-  viewportHeight: number;
-  scrollHeight: number;
-};
-
-const defaultSnapshot: ScrollSnapshot = {
-  scrollY: 0,
-  viewportHeight: 0,
-  scrollHeight: 0,
-};
-
-function getScrollSnapshot(container: HTMLElement | null): ScrollSnapshot {
-  if (typeof window === "undefined") {
-    return defaultSnapshot;
-  }
-
-  if (container) {
-    return {
-      scrollY: container.scrollTop,
-      viewportHeight: container.clientHeight,
-      scrollHeight: container.scrollHeight,
-    };
-  }
-
-  return {
-    scrollY: window.scrollY,
-    viewportHeight: window.innerHeight,
-    scrollHeight: document.documentElement.scrollHeight,
-  };
-}
-
-function useScrollSnapshot(container: HTMLElement | null): ScrollSnapshot {
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      if (typeof window === "undefined") {
-        return () => {};
-      }
-
-      const target = container ?? window;
-      const handleChange = () => onStoreChange();
-
-      target.addEventListener("scroll", handleChange, { passive: true });
-      window.addEventListener("resize", handleChange, { passive: true });
-
-      return () => {
-        target.removeEventListener("scroll", handleChange);
-        window.removeEventListener("resize", handleChange);
-      };
-    },
-    [container]
-  );
-
-  const getSnapshot = useCallback(
-    () => getScrollSnapshot(container),
-    [container]
-  );
-
-  const getServerSnapshot = useCallback(() => defaultSnapshot, []);
-
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
-
-function areIdInputsEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (!Array.isArray(a) || !Array.isArray(b)) return false;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (!Object.is(a[i], b[i])) return false;
-  }
-  return true;
-}
 
 export function useDomet(options: DometOptions): UseDometReturn {
   const {
@@ -240,6 +168,10 @@ export function useDomet(options: DometOptions): UseDometReturn {
   useIsomorphicLayoutEffect(() => {
     optionsRef.current = { trackingOffset, scrolling: scrollingDefaults };
   }, [trackingOffset, scrollingDefaults]);
+
+  useEffect(() => {
+    scheduleRecalculate();
+  }, [trackingOffset, scheduleRecalculate]);
 
   useIsomorphicLayoutEffect(() => {
     callbackRefs.current = {
@@ -726,18 +658,19 @@ export function useDomet(options: DometOptions): UseDometReturn {
       prevSectionsInViewport.current = currentInViewport;
     }
 
-    const triggerLine =
-      effectiveOffset + scrollProgress * (viewportHeight - effectiveOffset);
+    const triggerLine = Math.round(
+      effectiveOffset + scrollProgress * (viewportHeight - effectiveOffset)
+    );
 
     const newScrollState: ScrollState = {
-      y: scrollY,
+      y: Math.round(scrollY),
       progress: Math.max(0, Math.min(1, scrollProgress)),
       direction: scrollDirection,
-      velocity,
+      velocity: Math.round(velocity),
       scrolling: isScrollingRef.current,
-      maxScroll,
-      viewportHeight,
-      trackingOffset: effectiveOffset,
+      maxScroll: Math.round(maxScroll),
+      viewportHeight: Math.round(viewportHeight),
+      trackingOffset: Math.round(effectiveOffset),
       triggerLine,
     };
 
@@ -745,9 +678,9 @@ export function useDomet(options: DometOptions): UseDometReturn {
     for (const s of scores) {
       newSections[s.id] = {
         bounds: {
-          top: s.bounds.top,
-          bottom: s.bounds.bottom,
-          height: s.bounds.height,
+          top: Math.round(s.bounds.top),
+          bottom: Math.round(s.bounds.bottom),
+          height: Math.round(s.bounds.height),
         },
         visibility: Math.round(s.visibilityRatio * 100) / 100,
         progress: Math.round(s.progress * 100) / 100,

@@ -100,7 +100,21 @@ function transformPropTable(match: string): string {
   return [header, separator, ...rows].join("\n");
 }
 
-function transformContent(content: string): string {
+const LOCAL_URL_MAP: Record<string, string> = {
+  "/llms.txt": "./website/public/llms.txt",
+};
+
+function transformLocalUrls(content: string): string {
+  return content.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    (match, text, url) => {
+      const mapped = LOCAL_URL_MAP[url];
+      return mapped ? `[${text}](${mapped})` : match;
+    }
+  );
+}
+
+function transformContent(content: string, forReadme = false): string {
   const { frontmatter, content: bodyContent } = extractFrontmatter(content);
   const title = frontmatter.title || "domet";
 
@@ -114,6 +128,10 @@ function transformContent(content: string): string {
     /<PropTable\s+items=\{\[([\s\S]*?)\]\}\s*\/>/g,
     (match) => transformPropTable(match),
   );
+
+  if (forReadme) {
+    transformed = transformLocalUrls(transformed);
+  }
 
   transformed = transformed.replace(/\n{3,}/g, "\n\n");
   return `${transformed.trim()}\n`;
@@ -167,6 +185,7 @@ function syncDocumentation(): void {
     }
 
     const transformedContent = transformContent(sourceContent);
+    const transformedContentForReadme = transformContent(sourceContent, true);
 
     Object.entries(targetFiles).forEach(([displayName, filePath]) => {
       try {
@@ -175,7 +194,9 @@ function syncDocumentation(): void {
           fs.mkdirSync(dir, { recursive: true });
         }
 
-        fs.writeFileSync(filePath, transformedContent);
+        const isReadme = displayName.endsWith("README.md");
+        const content = isReadme ? transformedContentForReadme : transformedContent;
+        fs.writeFileSync(filePath, content);
         results[displayName] = "success";
 
         const relativePath = path.relative(

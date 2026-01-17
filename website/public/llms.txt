@@ -87,6 +87,7 @@ Callbacks do not fire while `lockActive` is enabled during programmatic scroll. 
 | `sections` | `Record<string, SectionState>` | Per-section state indexed by ID |
 | `register` | `(id: string) => RegisterProps` | Props to spread on section elements (includes id, ref, data-domet) |
 | `link` | `(id: string, options?: ScrollToOptions) => LinkProps` | Nav props (onClick, aria-current, data-active) with optional scroll overrides |
+| `navRef` | `(id: string) => (el: HTMLElement \| null) => void` | Ref callback for nav items; auto-scrolls active item into view in scrollable nav containers |
 | `scrollTo` | `(target: ScrollTarget, options?: ScrollToOptions) => void` | Programmatically scroll to a section or absolute scroll position |
 
 ### Types
@@ -253,6 +254,24 @@ return (
     <section {...register('s1')}>Section 1</section>
     <section {...register('s2')}>Section 2</section>
   </div>
+)
+```
+
+### Scrollable Navigation
+
+Keep the active nav item visible in a scrollable navigation container:
+
+```tsx showLineNumbers
+const { link, navRef } = useDomet({ ids })
+
+return (
+  <nav style={{ maxHeight: '200px', overflow: 'auto' }}>
+    {ids.map(id => (
+      <button key={id} ref={navRef(id)} {...link(id)}>
+        {id}
+      </button>
+    ))}
+  </nav>
 )
 ```
 

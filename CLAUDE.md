@@ -91,9 +91,11 @@ All user-facing messages (console warnings, error messages, UI feedback) must fo
 
 In `website/content/documentation.mdx`:
 
-1. **Examples need descriptions**: In section `## Examples`, when adding an example with a title, always include a brief description. Never just a title alone.
+1. **API changes require documentation**: ALWAYS update docs when adding/removing/modifying API (options, return values, types, callbacks). No API change ships without doc update.
 
-2. **Line numbers in code blocks**:
+2. **Examples need descriptions**: In section `## Examples`, when adding an example with a title, always include a brief description. Never just a title alone.
+
+3. **Line numbers in code blocks**:
    - 2 lines or less: no `showLineNumbers`
    - More than 2 lines: add `showLineNumbers`
 

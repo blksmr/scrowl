@@ -87,6 +87,7 @@ Callbacks do not fire while `lockActive` is enabled during programmatic scroll. 
 | `sections` | `Record<string, SectionState>` | Per-section state indexed by ID |
 | `register` | `(id: string) => RegisterProps` | Props to spread on section elements (includes id, ref, data-domet) |
 | `link` | `(id: string, options?: ScrollToOptions) => LinkProps` | Nav props (onClick, aria-current, data-active) with optional scroll overrides |
+| `navRef` | `(id: string) => (el: HTMLElement \| null) => void` | Ref callback for nav items; auto-scrolls active item into view in scrollable nav containers |
 | `scrollTo` | `(target: ScrollTarget, options?: ScrollToOptions) => void` | Programmatically scroll to a section or absolute scroll position |
 
 ### Types
@@ -256,6 +257,24 @@ return (
 )
 ```
 
+### Scrollable Navigation
+
+Keep the active nav item visible in a scrollable navigation container:
+
+```tsx showLineNumbers
+const { link, navRef } = useDomet({ ids })
+
+return (
+  <nav style={{ maxHeight: '200px', overflow: 'auto' }}>
+    {ids.map(id => (
+      <button key={id} ref={navRef(id)} {...link(id)}>
+        {id}
+      </button>
+    ))}
+  </nav>
+)
+```
+
 ### Third-party Components
 
 If a third-party component only accepts a `ref` prop (no spread), extract the ref from `register`:
@@ -305,6 +324,6 @@ The name **domet** comes from Bosnian/Serbian/Croatian and means "reach" or "ran
 
 For issues or feature requests, open an issue on [GitHub](https://github.com/blksmr/domet).
 
-For LLMs, the full documentation is available at [/llms.txt](/llms.txt).
+For LLMs, the full documentation is available at [/llms.txt](./website/public/llms.txt).
 
 You can also reach out to me on [Twitter](https://x.com/blkasmir).

@@ -750,7 +750,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
 
     const handleScrollEnd = (): void => {
       isScrollingRef.current = false;
-      setScroll((prev) => ({ ...prev, scrolling: false }));
+      setScroll((prev) => ({ ...prev, scrolling: false, direction: null }));
       callbackRefs.current.onScrollEnd?.();
     };
 

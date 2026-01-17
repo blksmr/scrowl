@@ -1,7 +1,7 @@
 "use client";
 
 import { useDomet, type ScrollToPosition } from "domet";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type LogEntry = {
   id: number;
@@ -27,6 +27,76 @@ const COLORS = [
 
 function getColor(index: number) {
   return COLORS[index % COLORS.length];
+}
+
+function TriggerLineCanvas({ triggerLine, visible }: { triggerLine: number; visible: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number | null>(null);
+  const triggerLineRef = useRef(triggerLine);
+
+  triggerLineRef.current = triggerLine;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const draw = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+
+      const { width, height } = parent.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        ctx.scale(dpr, dpr);
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      if (visible) {
+        const y = triggerLineRef.current;
+
+        ctx.beginPath();
+        ctx.setLineDash([8, 4]);
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 2;
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#ef4444";
+        ctx.font = "bold 11px ui-monospace, monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`trigger: ${Math.round(y)}px`, width / 2, y - 4);
+      }
+
+      animationRef.current = requestAnimationFrame(draw);
+    };
+
+    animationRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [visible]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none z-50"
+    />
+  );
 }
 
 function formatTime() {
@@ -447,11 +517,12 @@ export function Playground() {
         </div>
       </div>
 
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto bg-white relative"
-      >
-        {sectionIds.map((id, i) => {
+      <div className="flex-1 relative">
+        <div
+          ref={containerRef}
+          className="absolute inset-0 overflow-y-auto bg-white"
+        >
+          {sectionIds.map((id, i) => {
           const sectionState = sections[id];
           const isActive = active === id;
 
@@ -525,6 +596,8 @@ export function Playground() {
             </section>
           );
         })}
+        </div>
+        <TriggerLineCanvas triggerLine={scroll.triggerLine} visible={showTriggerLine} />
       </div>
     </div>
   );

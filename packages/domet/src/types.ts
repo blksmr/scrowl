@@ -103,6 +103,7 @@ export type UseDometReturn = {
   scrollTo: (target: ScrollTarget, options?: ScrollToOptions) => void;
   register: (id: string) => RegisterProps;
   link: (id: string, options?: ScrollToOptions) => LinkProps;
+  navRef: (id: string) => (el: HTMLElement | null) => void;
 };
 
 export type ResolvedSection = {
@@ -110,7 +111,7 @@ export type ResolvedSection = {
   element: HTMLElement;
 };
 
-export type InternalSectionBounds = SectionBounds & { id: string };
+export type InternalSectionBounds = SectionBounds & { id: string; rect: DOMRect };
 
 export type SectionScore = {
   id: string;

@@ -32,13 +32,14 @@ export function getSectionBounds(
       top: relativeTop,
       bottom: relativeTop + rect.height,
       height: rect.height,
+      rect,
     };
   });
 }
 
 export function calculateSectionScores(
   sectionBounds: InternalSectionBounds[],
-  sections: ResolvedSection[],
+  _sections: ResolvedSection[],
   ctx: ScoringContext,
 ): SectionScore[] {
   const {
@@ -57,8 +58,6 @@ export function calculateSectionScores(
   const scrollProgress = Math.min(1, Math.max(0, scrollY / maxScroll));
   const dynamicOffset = effectiveOffset + scrollProgress * (viewportHeight - effectiveOffset);
   const triggerLine = scrollY + dynamicOffset;
-
-  const elementMap = new Map(sections.map((s) => [s.id, s.element]));
 
   return sectionBounds.map((section) => {
     const visibleTop = Math.max(section.top, viewportTop);
@@ -103,9 +102,6 @@ export function calculateSectionScores(
       score += proximityScore;
     }
 
-    const element = elementMap.get(section.id);
-    const rect = element ? element.getBoundingClientRect() : null;
-
     return {
       id: section.id,
       score,
@@ -113,7 +109,7 @@ export function calculateSectionScores(
       inView: isInView,
       bounds: section,
       progress: sectionProgress,
-      rect,
+      rect: section.rect,
     };
   });
 }

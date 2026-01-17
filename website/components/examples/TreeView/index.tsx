@@ -351,6 +351,7 @@ type TreeNodeProps = {
   expandedGroups: Set<string>;
   onToggleGroup: (id: string) => void;
   hasChildren: boolean;
+  navRef: (el: HTMLElement | null) => void;
 };
 
 function TreeNode({
@@ -362,6 +363,7 @@ function TreeNode({
   expandedGroups,
   onToggleGroup,
   hasChildren,
+  navRef,
 }: TreeNodeProps) {
   const isExpanded = expandedGroups.has(item.id);
   const showNode = item.depth === 0 || (item.parentId && expandedGroups.has(item.parentId));
@@ -377,6 +379,7 @@ function TreeNode({
         <div className="absolute left-2 top-0 bottom-0 w-px bg-zinc-200" />
       )}
       <button
+        ref={navRef}
         onClick={() => {
           if (hasChildren && item.depth === 0) {
             onToggleGroup(item.id);
@@ -417,7 +420,7 @@ export function TreeView() {
     new Set(DOCUMENTATION_TREE.map((t) => t.id))
   );
 
-  const { active, progress, direction, register, scrollTo, sections } = useDomet({
+  const { active, progress, direction, register, scrollTo, sections, navRef } = useDomet({
     ids: SECTION_IDS,
     tracking: { offset: "10%", hysteresis: 100 },
   });
@@ -497,6 +500,7 @@ export function TreeView() {
               expandedGroups={expandedGroups}
               onToggleGroup={handleToggleGroup}
               hasChildren={childrenMap.get(item.id) || false}
+              navRef={navRef(item.id)}
             />
           ))}
         </nav>

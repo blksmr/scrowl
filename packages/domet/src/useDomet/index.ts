@@ -41,6 +41,8 @@ import {
   sanitizeSelector,
   useIsomorphicLayoutEffect,
   areIdInputsEqual,
+  areScrollStatesEqual,
+  areSectionsEqual,
 } from "../utils";
 
 
@@ -131,6 +133,8 @@ export function useDomet(options: DometOptions): UseDometReturn {
   const refs = useRef<Record<string, HTMLElement | null>>({});
   const refCallbacks = useRef<Record<string, (el: HTMLElement | null) => void>>({});
   const registerPropsCache = useRef<Record<string, RegisterProps>>({});
+  const navRefs = useRef<Record<string, HTMLElement | null>>({});
+  const navRefCallbacks = useRef<Record<string, (el: HTMLElement | null) => void>>({});
   const activeIdRef = useRef<string | null>(initialActiveId);
   const lastScrollY = useRef<number>(0);
   const lastScrollTime = useRef<number>(Date.now());
@@ -142,6 +146,8 @@ export function useDomet(options: DometOptions): UseDometReturn {
   const isScrollingRef = useRef<boolean>(false);
   const scrollIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevSectionsInViewport = useRef<Set<string>>(new Set());
+  const prevScrollStateRef = useRef<ScrollState | null>(null);
+  const prevSectionsStateRef = useRef<Record<string, SectionState> | null>(null);
   const recalculateRef = useRef<() => void>(() => {});
   const scheduleRecalculate = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -310,6 +316,33 @@ export function useDomet(options: DometOptions): UseDometReturn {
     refCallbacks.current[id] = callback;
     return callback;
   }, [scheduleRecalculate]);
+
+  const navRef = useCallback((id: string) => {
+    const existing = navRefCallbacks.current[id];
+    if (existing) return existing;
+
+    const callback = (el: HTMLElement | null) => {
+      if (el) {
+        navRefs.current[id] = el;
+      } else {
+        delete navRefs.current[id];
+      }
+    };
+
+    navRefCallbacks.current[id] = callback;
+    return callback;
+  }, []);
+
+  useEffect(() => {
+    if (!activeId) return;
+    const navElement = navRefs.current[activeId];
+    if (!navElement || typeof navElement.scrollIntoView !== "function") return;
+
+    navElement.scrollIntoView({
+      block: "nearest",
+      behavior: "instant",
+    });
+  }, [activeId]);
 
   const getResolvedBehavior = useCallback((behaviorOverride?: ScrollBehavior): ScrollBehavior => {
     const b = behaviorOverride ?? optionsRef.current.scrolling.behavior;
@@ -690,8 +723,15 @@ export function useDomet(options: DometOptions): UseDometReturn {
       };
     }
 
-    setScroll(newScrollState);
-    setSections(newSections);
+    if (!prevScrollStateRef.current || !areScrollStatesEqual(prevScrollStateRef.current, newScrollState)) {
+      prevScrollStateRef.current = newScrollState;
+      setScroll(newScrollState);
+    }
+
+    if (!prevSectionsStateRef.current || !areSectionsEqual(prevSectionsStateRef.current, newSections)) {
+      prevSectionsStateRef.current = newSections;
+      setSections(newSections);
+    }
   }, [
     sectionIds,
     sectionIndexMap,
@@ -805,6 +845,7 @@ export function useDomet(options: DometOptions): UseDometReturn {
     scrollTo,
     register,
     link,
+    navRef,
   };
 }
 

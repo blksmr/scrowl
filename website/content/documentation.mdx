@@ -125,7 +125,7 @@ type ScrollingOptions = {
 }
 ```
 
-If `position` is omitted for ID targets, Domet uses a dynamic alignment that keeps the trigger line within the section and prefers centering sections that fit in the viewport.
+If `position` is omitted for ID targets, Domet uses a dynamic alignment that keeps the trigger line within the section and prefers centering sections that fit in the viewport. When `position: "center"` is set, sections that fit in the viewport are centered; sections taller than the viewport align to the top instead (respecting `scrolling.offset`).
 
 ### ScrollState
 

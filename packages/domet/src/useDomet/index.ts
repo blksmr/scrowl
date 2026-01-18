@@ -510,7 +510,11 @@ export function useDomet(options: DometOptions): UseDometReturn {
           }
 
           if (position === "center") {
-            return clampValue(centerTarget, 0, maxScroll);
+            const fits = sectionHeight <= viewportHeight;
+            if (fits) {
+              return clampValue(centerTarget, 0, maxScroll);
+            }
+            return clampValue(topTarget, 0, maxScroll);
           }
 
           if (position === "bottom") {

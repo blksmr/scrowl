@@ -423,6 +423,7 @@ export function TreeView() {
   const { active, progress, direction, register, scrollTo, sections, navRef } = useDomet({
     ids: SECTION_IDS,
     tracking: { offset: "10%", hysteresis: 100 },
+    scrolling: { behavior: "smooth", offset: 16 },
   });
 
   const handleToggleGroup = (id: string) => {

@@ -49,7 +49,6 @@ export default [
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
-      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
       "eol-last": ["error", "always"],
     },
   },
